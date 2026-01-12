@@ -31,55 +31,51 @@
   --color-cocoa: hsl(var(--cocoa));
   --color-rose: hsl(var(--rose));
   --color-cream: hsl(var(--cream));
-  --color-gold: hsl(var(--gold));
 
   --font-display: 'Playfair Display', serif;
-  --font-sans: 'DM Sans', sans-serif;
-  --font-serif: 'Cormorant Garamond', serif;
+  --font-sans: 'Inter', sans-serif;
 }
 
 :root {
   --cocoa: 24 33% 18%;
   --cocoa-light: 24 25% 28%;
-  --rose: 0 60% 86%;
-  --rose-dark: 0 45% 70%;
-  --cream: 60 56% 91%;
-  --gold: 43 74% 66%;
+  --rose: 330 100% 70%;
+  --rose-dark: 330 80% 55%;
+  --cream: 30 30% 96%;
 
-  --background: 60 56% 91%;
+  --background: 30 30% 96%;
   --foreground: 24 33% 18%;
 
-  --border: 24 20% 80%;
+  --border: 24 20% 85%;
 
-  --card: 60 40% 96%;
+  --card: 0 0% 100%;
   --card-foreground: 24 33% 18%;
-  --card-border: 24 20% 85%;
+  --card-border: 24 20% 90%;
 
-  --popover: 60 40% 96%;
+  --popover: 0 0% 100%;
   --popover-foreground: 24 33% 18%;
 
-  --primary: 24 33% 18%;
-  --primary-foreground: 0 60% 86%;
+  --primary: 330 100% 70%;
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: 0 60% 86%;
-  --secondary-foreground: 24 33% 18%;
+  --secondary: 24 33% 18%;
+  --secondary-foreground: 0 0% 100%;
 
-  --muted: 24 15% 90%;
+  --muted: 24 15% 92%;
   --muted-foreground: 24 20% 45%;
 
-  --accent: 43 74% 66%;
-  --accent-foreground: 24 33% 18%;
+  --accent: 330 100% 70%;
+  --accent-foreground: 0 0% 100%;
 
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 24 20% 80%;
-  --ring: 24 33% 18%;
+  --input: 24 20% 85%;
+  --ring: 330 100% 70%;
 
-  --radius: 0.5rem;
+  --radius: 0.75rem;
 
-  --font-sans: 'DM Sans', sans-serif;
-  --font-serif: 'Cormorant Garamond', serif;
+  --font-sans: 'Inter', sans-serif;
   --font-display: 'Playfair Display', serif;
 }
 
@@ -106,61 +102,43 @@
   .font-display {
     font-family: var(--font-display);
   }
-  
-  .font-serif {
-    font-family: var(--font-serif);
+
+  .bg-rose-gradient {
+    background: linear-gradient(135deg, #FF66B2 0%, #FF4DA6 100%);
   }
 
-  .text-gradient-gold {
-    background: linear-gradient(135deg, hsl(43 74% 66%) 0%, hsl(35 60% 55%) 50%, hsl(43 74% 66%) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  .text-rose-vibrant {
+    color: #FF66B2;
   }
 
-  .glass {
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+  .bg-rose-vibrant {
+    background-color: #FF66B2;
   }
 
-  .glass-rose {
-    background: rgba(244, 194, 194, 0.1);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(244, 194, 194, 0.2);
+  .border-rose-vibrant {
+    border-color: #FF66B2;
   }
 
-  .noise {
-    position: relative;
-  }
-
-  .noise::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    opacity: 0.03;
-    pointer-events: none;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  .hover-rose-vibrant:hover {
+    background-color: #FF4DA6;
   }
 
   .animate-fade-up {
-    animation: fadeUp 0.8s ease-out forwards;
+    animation: fadeUp 0.6s ease-out forwards;
   }
 
   .animate-fade-in {
-    animation: fadeIn 1s ease-out forwards;
+    animation: fadeIn 0.8s ease-out forwards;
   }
 
-  .animate-scale-in {
-    animation: scaleIn 0.6s ease-out forwards;
+  .animate-slide-in-right {
+    animation: slideInRight 0.4s ease-out forwards;
   }
 
   @keyframes fadeUp {
     from {
       opacity: 0;
-      transform: translateY(30px);
+      transform: translateY(20px);
     }
     to {
       opacity: 1;
@@ -169,29 +147,18 @@
   }
 
   @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideInRight {
     from {
       opacity: 0;
+      transform: translateX(100%);
     }
     to {
       opacity: 1;
+      transform: translateX(0);
     }
   }
-
-  @keyframes scaleIn {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  .stagger-1 { animation-delay: 0.1s; }
-  .stagger-2 { animation-delay: 0.2s; }
-  .stagger-3 { animation-delay: 0.3s; }
-  .stagger-4 { animation-delay: 0.4s; }
-  .stagger-5 { animation-delay: 0.5s; }
-  .stagger-6 { animation-delay: 0.6s; }
 }
