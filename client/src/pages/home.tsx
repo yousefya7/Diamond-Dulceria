@@ -1083,7 +1083,7 @@ export default function Home() {
                         />
                       </div>
                       <div>
-                        <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">Email</label>
+                        <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">Email <span className="text-red-500">*</span></label>
                         <input
                           type="email"
                           required
