@@ -351,7 +351,7 @@ export default function Home() {
           data-testid={`add-${product.id}`}
         >
           <Plus className="w-5 h-5" />
-          ADD TO CART
+          {product.isCustom ? 'CUSTOM ORDER' : 'ADD TO CART'}
         </button>
       </div>
     </motion.div>
