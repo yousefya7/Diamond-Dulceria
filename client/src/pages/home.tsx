@@ -18,7 +18,7 @@ const products = [
     description: "Pistachio cream & toasted kataifi filling wrapped in dark chocolate",
     isCustom: false,
     category: "truffle",
-    image: "/dubai_chocolate_truffles_1768273692163.jpg", // <!-- UPLOAD PRODUCT IMAGE HERE -->
+    image: "/dubai_chocolate.png", // <!-- UPLOAD PRODUCT IMAGE HERE -->
     trending: true
   },
   { 
@@ -29,7 +29,7 @@ const products = [
     description: "Speculoos spice center with silky white chocolate shell",
     isCustom: false,
     category: "truffle",
-    image: "" // <!-- UPLOAD PRODUCT IMAGE HERE -->
+    image: "/cookie_butter.png" // <!-- UPLOAD PRODUCT IMAGE HERE -->
   },
   { 
     id: "strawberry-shortcake", 
@@ -39,7 +39,7 @@ const products = [
     description: "Fresh strawberry cream infused ganache with delicate shortcake crumble",
     isCustom: false,
     category: "truffle",
-    image: "" // <!-- UPLOAD PRODUCT IMAGE HERE -->
+    image: "/strawberry_shortcake.png" // <!-- UPLOAD PRODUCT IMAGE HERE -->
   },
   { 
     id: "cookies-cream", 
@@ -49,7 +49,7 @@ const products = [
     description: "Rich Oreo-infused white chocolate ganache with cookie dust finish",
     isCustom: false,
     category: "truffle",
-    image: "" // <!-- UPLOAD PRODUCT IMAGE HERE -->
+    image: "/cookies_cream.png" // <!-- UPLOAD PRODUCT IMAGE HERE -->
   },
   { 
     id: "red-velvet", 
@@ -59,7 +59,7 @@ const products = [
     description: "Deep red cocoa with white chocolate chips and cream cheese swirl",
     isCustom: false,
     category: "cookie",
-    image: "/red_velvet_1768272691836.jpg" // <!-- UPLOAD PRODUCT IMAGE HERE -->
+    image: "/red_velvet.png" // <!-- UPLOAD PRODUCT IMAGE HERE -->
   },
   { 
     id: "snickerdoodle", 
@@ -69,7 +69,7 @@ const products = [
     description: "Classic cinnamon-sugar dusting with soft, chewy center",
     isCustom: false,
     category: "cookie",
-    image: "" // <!-- UPLOAD PRODUCT IMAGE HERE -->
+    image: "/snickerdoodle.png" // <!-- UPLOAD PRODUCT IMAGE HERE -->
   },
   { 
     id: "signature-cookies", 
@@ -79,7 +79,7 @@ const products = [
     description: "Our signature brown butter cookies with premium chocolate and sea salt",
     isCustom: false,
     category: "cookie",
-    image: "/signature_cookies_1768273692165.jpg" // <!-- UPLOAD PRODUCT IMAGE HERE -->
+    image: "/signature_cookies.png" // <!-- UPLOAD PRODUCT IMAGE HERE -->
   },
   { 
     id: "bespoke-diamond", 
