@@ -446,15 +446,15 @@ export default function Home() {
                 </div>
               </div>
               
-              {/* Cart Button - Pinned to Top Right Corner */}
+              {/* Cart Button - Pinned to Top Right Corner - Pink on Brown */}
               <button
                 onClick={() => setCartOpen(true)}
-                className="fixed right-0 top-0 z-50 p-4 sm:p-5 bg-[#F4C2C2] hover:bg-[#e8b0b0] text-[#3D2B1F] transition-all duration-300 active:scale-95"
+                className="fixed right-0 top-0 z-50 p-4 sm:p-5 bg-[#3D2B1F] hover:bg-[#2a1e15] text-[#F4C2C2] transition-all duration-300 active:scale-95"
                 data-testid="button-cart"
               >
                 <ShoppingBag className="w-6 h-6 sm:w-7 sm:h-7" />
                 {cartCount > 0 && (
-                  <span className="absolute top-1 right-1 w-6 h-6 bg-[#3D2B1F] text-[#F4C2C2] text-xs font-bold flex items-center justify-center rounded-full">
+                  <span className="absolute top-1 right-1 w-6 h-6 bg-[#F4C2C2] text-[#3D2B1F] text-xs font-bold flex items-center justify-center rounded-full">
                     {cartCount}
                   </span>
                 )}
@@ -513,8 +513,8 @@ export default function Home() {
           </div>
         </motion.nav>
 
-        {/* Hero Section */}
-        <section className="relative py-20 sm:py-32 px-4 overflow-hidden">
+        {/* Hero Section - Full Screen */}
+        <section className="relative min-h-[100vh] flex items-center justify-center px-4 overflow-hidden">
           <div className="absolute inset-0 opacity-30">
             <div className="absolute top-20 left-1/4 w-64 h-64 rounded-full bg-[#3D2B1F]/10 blur-3xl" />
             <div className="absolute bottom-20 right-1/4 w-80 h-80 rounded-full bg-[#3D2B1F]/10 blur-3xl" />
@@ -621,32 +621,32 @@ export default function Home() {
           <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
         </div>
 
-        {/* Bespoke Diamond Section - Featured Standout */}
-        <section id="bespoke" className="py-28 sm:py-40 px-4 sm:px-6 lg:px-8 scroll-mt-28 relative overflow-hidden">
+        {/* Bespoke Diamond Section - Compact Full Screen */}
+        <section id="bespoke" className="min-h-[100vh] flex flex-col justify-center py-12 sm:py-16 px-4 sm:px-6 lg:px-8 scroll-mt-28 relative overflow-hidden">
           {/* Premium background pattern */}
           <div className="absolute inset-0 opacity-40">
             <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-[#D4AF37]/10 blur-3xl" />
             <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-[#3D2B1F]/5 blur-3xl" />
           </div>
           
-          <div className="relative max-w-3xl mx-auto">
+          <div className="relative max-w-2xl mx-auto w-full">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center mb-14 sm:mb-16"
+              className="text-center mb-8 sm:mb-10"
             >
-              <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#3D2B1F]/5 border border-[#D4AF37]/30 mb-6">
-                <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 text-[#D4AF37]" />
+              <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-[#3D2B1F]/5 border border-[#D4AF37]/30 mb-4">
+                <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-[#D4AF37]" />
               </div>
-              <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl text-[#3D2B1F] mb-5 tracking-wide">
+              <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl text-[#3D2B1F] mb-3 tracking-wide">
                 Bespoke Creations
               </h2>
-              <p className="text-[#3D2B1F]/60 text-lg sm:text-xl max-w-lg mx-auto">Have a unique flavor in mind? Let us craft something extraordinary just for you.</p>
-              <div className="flex items-center justify-center gap-4 mt-8">
-                <div className="w-16 h-px bg-[#D4AF37]/50" />
-                <DiamondLogo className="w-6 h-6 text-[#D4AF37]/60" />
-                <div className="w-16 h-px bg-[#D4AF37]/50" />
+              <p className="text-[#3D2B1F]/60 text-base sm:text-lg max-w-md mx-auto">Have a unique flavor in mind? Let us craft something extraordinary just for you.</p>
+              <div className="flex items-center justify-center gap-4 mt-4">
+                <div className="w-12 h-px bg-[#D4AF37]/50" />
+                <DiamondLogo className="w-5 h-5 text-[#D4AF37]/60" />
+                <div className="w-12 h-px bg-[#D4AF37]/50" />
               </div>
             </motion.div>
 
