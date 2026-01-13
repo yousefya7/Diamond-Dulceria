@@ -1036,12 +1036,20 @@ export default function Home() {
                       <Sparkles className="w-10 h-10 text-[#D4AF37]" />
                     </div>
                     <h4 className="font-display text-2xl text-[#3D2B1F] mb-3 tracking-wide">Order Received!</h4>
-                    <p className="text-[#3D2B1F]/60 mb-6">
+                    <p className="text-[#3D2B1F]/60 mb-4">
                       Thank you for your order, {checkoutForm.name.split(' ')[0]}!<br/>
-                      We'll be in touch shortly to confirm delivery.
+                      We'll contact you shortly when your order is ready for pickup.
                     </p>
-                    <div className="p-4 bg-[#3D2B1F]/5 rounded-lg border border-[#3D2B1F]/10">
-                      <p className="text-[#3D2B1F]/80 text-sm font-medium">Payment Due on Delivery: ${subtotal}</p>
+                    <div className="p-4 bg-[#3D2B1F]/5 rounded-lg border border-[#3D2B1F]/10 mb-4">
+                      <p className="text-[#3D2B1F]/80 text-sm font-medium">Payment Due on Pickup: ${subtotal}</p>
+                    </div>
+                    <div className="p-4 bg-[#D4AF37]/10 rounded-lg border border-[#D4AF37]/30 text-left">
+                      <p className="text-[#3D2B1F] text-xs font-medium mb-2 uppercase tracking-wide">📋 Save Your Order Details:</p>
+                      <p className="text-[#3D2B1F]/70 text-sm">
+                        <strong>Name:</strong> {checkoutForm.name}<br/>
+                        <strong>Phone:</strong> {checkoutForm.phone}<br/>
+                        <strong>Total:</strong> ${subtotal} (pay on pickup)
+                      </p>
                     </div>
                   </div>
                 ) : (
