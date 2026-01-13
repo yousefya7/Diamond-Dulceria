@@ -190,6 +190,22 @@ export default function Home() {
     setCartOpen(true);
   };
 
+  const handleCheckout = () => {
+    const orderDetails = cart.map(item => 
+      `• ${item.name} (x${item.quantity}) - $${item.price * item.quantity}`
+    ).join('\n');
+    
+    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    
+    const subject = encodeURIComponent("New Order Request - Diamond Dulceria");
+    const body = encodeURIComponent(
+      `Hello,\n\nI would like to place an order for the following items:\n\n${orderDetails}\n\nTotal Estimate: $${total}\n\nPlease let me know how to proceed with payment and delivery.\n\nThank you!`
+    );
+    
+    // Replace with your actual email address
+    window.location.href = `mailto:your-email@example.com?subject=${subject}&body=${body}`;
+  };
+
   const updateQuantity = (id: string, delta: number) => {
     setCart(prev => prev.map(item => {
       if (item.id === id) {
@@ -818,6 +834,7 @@ export default function Home() {
                       <span className="font-display text-3xl text-[#F4C2C2]">${subtotal}</span>
                     </div>
                     <button
+                      onClick={handleCheckout}
                       className="w-full py-5 bg-[#F4C2C2] hover:bg-[#e8b0b0] text-[#3D2B1F] text-lg font-display tracking-[0.15em] rounded-full transition-all duration-300 active:scale-[0.98]"
                       data-testid="button-checkout"
                     >
