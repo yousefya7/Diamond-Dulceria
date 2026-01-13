@@ -119,20 +119,6 @@ const reviews = [
     product: "Signature Cookies",
     image: "/review_signature.jpg" // <!-- UPLOAD REVIEW IMAGE HERE -->
   },
-  {
-    id: 4,
-    name: "Michael R.",
-    review: "Bought these for my wife's birthday. She said it was her favorite gift ever.",
-    product: "Strawberry Shortcake Truffles",
-    image: "" // <!-- UPLOAD REVIEW IMAGE HERE -->
-  },
-  {
-    id: 5,
-    name: "Taylor B.",
-    review: "Red Velvet cookies are absolutely divine. Will order again!",
-    product: "Red Velvet Cookies",
-    image: "" // <!-- UPLOAD REVIEW IMAGE HERE -->
-  },
 ];
 
 const DiamondStar = ({ className = "" }: { className?: string }) => (
