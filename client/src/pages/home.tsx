@@ -176,7 +176,7 @@ export default function Home() {
   
   const [customModalOpen, setCustomModalOpen] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
-  const [customForm, setCustomForm] = useState({ flavorIdea: '', eventDate: '', name: '', email: '' });
+  const [customForm, setCustomForm] = useState({ dessertType: '', flavorRequest: '', eventDate: '' });
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 2000);
@@ -266,14 +266,14 @@ export default function Home() {
     // Add bespoke as a $0 item with custom notes
     const bespokeProduct = products.find(p => p.isCustom);
     if (bespokeProduct) {
-      const customNotes = `Name: ${customForm.name}\nEmail: ${customForm.email}\nFlavor Idea: ${customForm.flavorIdea}\nEvent Date: ${customForm.eventDate}`;
+      const customNotes = `Dessert Type: ${customForm.dessertType}\nFlavor Request: ${customForm.flavorRequest}\nEvent Date: ${customForm.eventDate}`;
       addToCart(bespokeProduct, customNotes);
     }
     setFormSubmitted(true);
     setTimeout(() => {
       setCustomModalOpen(false);
       setFormSubmitted(false);
-      setCustomForm({ flavorIdea: '', eventDate: '', name: '', email: '' });
+      setCustomForm({ dessertType: '', flavorRequest: '', eventDate: '' });
     }, 2500);
   };
 
@@ -1141,8 +1141,8 @@ export default function Home() {
                 {formSubmitted ? (
                   <div className="p-10 text-center">
                     <DiamondLogo className="w-16 h-16 text-[#3D2B1F] mx-auto mb-6" />
-                    <h4 className="font-display text-2xl text-[#3D2B1F] mb-3 tracking-wide">Request Submitted</h4>
-                    <p className="text-[#3D2B1F]/60">We'll review your idea and be in touch soon.</p>
+                    <h4 className="font-display text-2xl text-[#3D2B1F] mb-3 tracking-wide">Added to Cart!</h4>
+                    <p className="text-[#3D2B1F]/60">Your custom creation request has been added. Complete checkout to submit your order.</p>
                   </div>
                 ) : (
                   <form onSubmit={handleCustomSubmit} className="p-6 sm:p-8 space-y-5">
@@ -1151,46 +1151,39 @@ export default function Home() {
                     </p>
                     
                     <div>
-                      <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">Your Name</label>
+                      <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">
+                        Dessert Type <span className="text-red-500">*</span>
+                      </label>
                       <input
                         type="text"
                         required
-                        value={customForm.name}
-                        onChange={(e) => setCustomForm(prev => ({ ...prev, name: e.target.value }))}
+                        value={customForm.dessertType}
+                        onChange={(e) => setCustomForm(prev => ({ ...prev, dessertType: e.target.value }))}
                         className="w-full px-4 py-4 bg-white border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] text-lg rounded-lg"
-                        placeholder="Jane Doe"
-                        data-testid="input-name"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">Email</label>
-                      <input
-                        type="email"
-                        required
-                        value={customForm.email}
-                        onChange={(e) => setCustomForm(prev => ({ ...prev, email: e.target.value }))}
-                        className="w-full px-4 py-4 bg-white border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] text-lg rounded-lg"
-                        placeholder="jane@email.com"
-                        data-testid="input-email"
+                        placeholder="e.g., Cookie, Cake, Tray"
+                        data-testid="input-dessert-type"
                       />
                     </div>
                     
                     <div>
-                      <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">Flavor Idea</label>
+                      <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">
+                        Flavor Request <span className="text-red-500">*</span>
+                      </label>
                       <textarea
                         required
-                        value={customForm.flavorIdea}
-                        onChange={(e) => setCustomForm(prev => ({ ...prev, flavorIdea: e.target.value }))}
+                        value={customForm.flavorRequest}
+                        onChange={(e) => setCustomForm(prev => ({ ...prev, flavorRequest: e.target.value }))}
                         className="w-full px-4 py-4 bg-white border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] text-lg resize-none rounded-lg"
-                        rows={3}
-                        placeholder="Describe your dream flavor..."
-                        data-testid="input-flavor"
+                        rows={4}
+                        placeholder="Describe your custom flavor idea in detail..."
+                        data-testid="input-flavor-request"
                       />
                     </div>
                     
                     <div>
-                      <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">Event Date</label>
+                      <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">
+                        Event Date <span className="text-red-500">*</span>
+                      </label>
                       <input
                         type="date"
                         required
@@ -1204,10 +1197,10 @@ export default function Home() {
                     <button
                       type="submit"
                       className="w-full py-5 bg-[#3D2B1F] hover:bg-[#2a1e15] text-[#F9F1F1] text-lg font-display tracking-[0.15em] rounded-full transition-all duration-300 flex items-center justify-center gap-3 active:scale-[0.98]"
-                      data-testid="button-submit-request"
+                      data-testid="button-add-custom-to-cart"
                     >
-                      <Send className="w-5 h-5" />
-                      SUBMIT REQUEST
+                      <Plus className="w-5 h-5" />
+                      ADD TO CART
                     </button>
                   </form>
                 )}
