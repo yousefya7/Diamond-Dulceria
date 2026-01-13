@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Plus, Minus, X, Instagram, Sparkles, Send } from "lucide-react";
+import { ShoppingBag, Plus, Minus, X, Instagram, Sparkles, Send, Star } from "lucide-react";
 
 type CartItem = {
   id: string;
@@ -95,6 +95,50 @@ const products = [
 const truffles = products.filter(p => p.category === "truffle");
 const cookies = products.filter(p => p.category === "cookie");
 const custom = products.filter(p => p.category === "custom");
+
+const reviews = [
+  {
+    id: 1,
+    name: "Sarah M.",
+    review: "The Dubai Chocolate is life-changing! Best truffles I've ever had.",
+    product: "Dubai Chocolate Truffles",
+    image: "" // <!-- UPLOAD REVIEW IMAGE HERE -->
+  },
+  {
+    id: 2,
+    name: "Jessica L.",
+    review: "Ordered for my wedding and guests couldn't stop talking about them!",
+    product: "Cookie Butter Truffles",
+    image: "" // <!-- UPLOAD REVIEW IMAGE HERE -->
+  },
+  {
+    id: 3,
+    name: "Amanda K.",
+    review: "The Snickerdoodles taste like a warm hug. Obsessed!",
+    product: "Snickerdoodle Cookies",
+    image: "" // <!-- UPLOAD REVIEW IMAGE HERE -->
+  },
+  {
+    id: 4,
+    name: "Michael R.",
+    review: "Bought these for my wife's birthday. She said it was her favorite gift ever.",
+    product: "Strawberry Shortcake Truffles",
+    image: "" // <!-- UPLOAD REVIEW IMAGE HERE -->
+  },
+  {
+    id: 5,
+    name: "Taylor B.",
+    review: "Red Velvet cookies are absolutely divine. Will order again!",
+    product: "Red Velvet Cookies",
+    image: "" // <!-- UPLOAD REVIEW IMAGE HERE -->
+  },
+];
+
+const DiamondStar = ({ className = "" }: { className?: string }) => (
+  <svg viewBox="0 0 20 20" className={className} fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10 1L12.5 7.5L19 10L12.5 12.5L10 19L7.5 12.5L1 10L7.5 7.5L10 1Z" />
+  </svg>
+);
 
 const DiamondLogo = ({ className = "", gold = false }: { className?: string; gold?: boolean }) => (
   <svg viewBox="0 0 40 40" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -480,6 +524,111 @@ export default function Home() {
             {custom.map((product, index) => (
               <ProductCard key={product.id} product={product} index={index} />
             ))}
+          </div>
+        </section>
+
+        {/* Diamond Wall of Love - Reviews Section */}
+        <section className="py-16 sm:py-24 overflow-hidden">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-12"
+            >
+              <div className="flex items-center justify-center gap-2 mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <DiamondStar key={i} className="w-5 h-5 text-[#D4AF37]" />
+                ))}
+              </div>
+              <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl text-[#3D2B1F] mb-4 tracking-wide">
+                Our Sparkling Clients
+              </h2>
+              <p className="text-[#3D2B1F]/60 text-lg">The Diamond Wall of Love</p>
+              <div className="flex items-center justify-center gap-4 mt-6">
+                <div className="w-12 h-px bg-[#3D2B1F]/30" />
+                <DiamondLogo className="w-5 h-5 text-[#3D2B1F]/40" />
+                <div className="w-12 h-px bg-[#3D2B1F]/30" />
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Horizontal Scrolling Gallery */}
+          <div 
+            className="flex gap-6 px-4 sm:px-6 pb-4 overflow-x-auto scrollbar-hide"
+            style={{ 
+              scrollSnapType: 'x mandatory',
+              WebkitOverflowScrolling: 'touch'
+            }}
+          >
+            {/* Spacer for centering on desktop */}
+            <div className="flex-shrink-0 w-4 sm:w-[calc((100vw-72rem)/2)]" />
+            
+            {reviews.map((review, index) => (
+              <motion.div
+                key={review.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="flex-shrink-0 w-72 sm:w-80"
+                style={{ scrollSnapAlign: 'start' }}
+              >
+                <div 
+                  className="h-full border border-[#3D2B1F]/20"
+                  style={{ 
+                    backgroundColor: '#F9F1F1',
+                    boxShadow: '0 4px 24px rgba(61, 43, 31, 0.08)'
+                  }}
+                >
+                  {/* <!-- UPLOAD REVIEW IMAGE HERE --> */}
+                  {/* Square Product Photo */}
+                  <div className="aspect-square relative overflow-hidden" style={{ backgroundColor: 'rgba(61, 43, 31, 0.03)' }}>
+                    {review.image ? (
+                      <img 
+                        src={review.image} 
+                        alt={`${review.product} review`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div 
+                        className="w-full h-full flex flex-col items-center justify-center"
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(61, 43, 31, 0.06) 0%, rgba(61, 43, 31, 0.02) 100%)',
+                          backdropFilter: 'blur(8px)'
+                        }}
+                      >
+                        <DiamondLogo className="w-12 h-12 text-[#3D2B1F]/15 mb-2" />
+                        <span className="text-[#3D2B1F]/30 text-xs font-display tracking-[0.1em]">{review.product}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Review Content */}
+                  <div className="p-6">
+                    {/* 5-Star Diamond Rating */}
+                    <div className="flex items-center gap-1 mb-4">
+                      {[...Array(5)].map((_, i) => (
+                        <DiamondStar key={i} className="w-4 h-4 text-[#D4AF37]" />
+                      ))}
+                    </div>
+
+                    {/* Review Text */}
+                    <p className="text-[#3D2B1F]/80 text-sm sm:text-base leading-relaxed mb-4 italic">
+                      "{review.review}"
+                    </p>
+
+                    {/* Customer Name */}
+                    <p className="font-display text-[#3D2B1F] tracking-wide text-sm">
+                      — {review.name}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+
+            {/* Spacer for centering on desktop */}
+            <div className="flex-shrink-0 w-4 sm:w-[calc((100vw-72rem)/2)]" />
           </div>
         </section>
 
