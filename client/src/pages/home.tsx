@@ -471,38 +471,38 @@ export default function Home() {
           className="sticky top-[72px] sm:top-24 z-30 border-b border-[#3D2B1F]/10"
           style={{ backgroundColor: '#F4C2C2' }}
         >
-          <div className="relative">
+          <div className="w-full overflow-hidden">
             <div 
-              className="grid grid-cols-2 sm:flex sm:items-center sm:justify-center gap-2 sm:gap-10 px-4 sm:px-6 py-3 sm:py-4 max-w-full"
+              className="flex items-center justify-around w-full px-2 sm:px-6 py-3 sm:py-4"
             >
               <a 
                 href="#truffles" 
                 onClick={(e) => { e.preventDefault(); document.getElementById('truffles')?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="font-display text-sm sm:text-lg tracking-[0.1em] sm:tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors text-center py-2 px-3 rounded-lg hover:bg-[#3D2B1F]/5 active:bg-[#3D2B1F]/10"
+                className="flex-shrink font-display text-[3.2vw] sm:text-lg tracking-[0.05em] sm:tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors text-center py-2 px-1 sm:px-3 rounded-lg hover:bg-[#3D2B1F]/5 active:bg-[#3D2B1F]/10"
               >
                 Truffles
               </a>
-              <span className="hidden sm:inline text-[#3D2B1F]/30 text-lg">|</span>
+              <span className="text-[#3D2B1F]/30 text-[3vw] sm:text-lg">|</span>
               <a 
                 href="#cookies" 
                 onClick={(e) => { e.preventDefault(); document.getElementById('cookies')?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="font-display text-sm sm:text-lg tracking-[0.1em] sm:tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors text-center py-2 px-3 rounded-lg hover:bg-[#3D2B1F]/5 active:bg-[#3D2B1F]/10"
+                className="flex-shrink font-display text-[3.2vw] sm:text-lg tracking-[0.05em] sm:tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors text-center py-2 px-1 sm:px-3 rounded-lg hover:bg-[#3D2B1F]/5 active:bg-[#3D2B1F]/10"
               >
                 Cookies
               </a>
-              <span className="hidden sm:inline text-[#3D2B1F]/30 text-lg">|</span>
+              <span className="text-[#3D2B1F]/30 text-[3vw] sm:text-lg">|</span>
               <a 
                 href="#bespoke" 
                 onClick={(e) => { e.preventDefault(); document.getElementById('bespoke')?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="font-display text-sm sm:text-lg tracking-[0.1em] sm:tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors text-center py-2 px-3 rounded-lg hover:bg-[#3D2B1F]/5 active:bg-[#3D2B1F]/10"
+                className="flex-shrink font-display text-[3.2vw] sm:text-lg tracking-[0.05em] sm:tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors text-center py-2 px-1 sm:px-3 rounded-lg hover:bg-[#3D2B1F]/5 active:bg-[#3D2B1F]/10"
               >
                 Custom
               </a>
-              <span className="hidden sm:inline text-[#3D2B1F]/30 text-lg">|</span>
+              <span className="text-[#3D2B1F]/30 text-[3vw] sm:text-lg">|</span>
               <a 
                 href="#wall-of-love" 
                 onClick={(e) => { e.preventDefault(); document.getElementById('wall-of-love')?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="font-display text-sm sm:text-lg tracking-[0.1em] sm:tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors text-center py-2 px-3 rounded-lg hover:bg-[#3D2B1F]/5 active:bg-[#3D2B1F]/10"
+                className="flex-shrink font-display text-[3.2vw] sm:text-lg tracking-[0.05em] sm:tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors text-center py-2 px-1 sm:px-3 rounded-lg hover:bg-[#3D2B1F]/5 active:bg-[#3D2B1F]/10"
               >
                 Reviews
               </a>
