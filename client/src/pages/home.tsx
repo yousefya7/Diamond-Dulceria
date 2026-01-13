@@ -718,19 +718,29 @@ export default function Home() {
         </section>
 
         {/* Footer */}
-        <footer className="py-16 sm:py-20 px-4 border-t border-[#3D2B1F]/10">
+        <footer className="py-16 sm:py-20 px-4" style={{ backgroundColor: '#3D2B1F' }}>
           <div className="max-w-6xl mx-auto text-center">
-            <DiamondLogo className="w-12 h-12 text-[#3D2B1F] mx-auto mb-6" />
-            <h3 className="font-display text-2xl sm:text-3xl text-[#3D2B1F] tracking-[0.2em] mb-2">DIAMOND DULCERIA</h3>
-            <p className="font-display text-[#3D2B1F]/40 text-xs tracking-[0.3em] mb-8 italic">Estd. 2025</p>
+            <DiamondLogo className="w-12 h-12 text-[#F4C2C2] mx-auto mb-6" />
+            <h3 className="font-display text-2xl sm:text-3xl text-[#F4C2C2] tracking-[0.2em] mb-2">DIAMOND DULCERIA</h3>
+            <p className="font-display text-[#F4C2C2]/40 text-xs tracking-[0.3em] mb-8 italic">Estd. 2025</p>
             
             <div className="flex justify-center gap-4 mb-10">
-              <a href="#" className="p-4 border border-[#3D2B1F]/20 text-[#3D2B1F] hover:bg-[#3D2B1F] hover:text-[#F4C2C2] rounded-full transition-all duration-300" data-testid="link-instagram">
+              <a href="#" className="p-4 border border-[#F4C2C2]/30 text-[#F4C2C2] hover:bg-[#F4C2C2] hover:text-[#3D2B1F] rounded-full transition-all duration-300" data-testid="link-instagram">
                 <Instagram className="w-5 h-5" />
+              </a>
+              <a href="#" className="p-4 border border-[#F4C2C2]/30 text-[#F4C2C2] hover:bg-[#F4C2C2] hover:text-[#3D2B1F] rounded-full transition-all duration-300" data-testid="link-snapchat">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2.5c-3.5 0-5.5 2.5-5.5 5.5v2c-1.5.5-2.5 1-2.5 1.5 0 .5 1 .5 1 1s-1 1-1 2 2 2 3 2c0 1 .5 2 1 2.5s2 2 4 2 3.5-1.5 4-2 1-1.5 1-2.5c1 0 3-1 3-2s-1-1.5-1-2 1-.5 1-1-1-1-2.5-1.5v-2c0-3-2-5.5-5.5-5.5z"/>
+                </svg>
+              </a>
+              <a href="#" className="p-4 border border-[#F4C2C2]/30 text-[#F4C2C2] hover:bg-[#F4C2C2] hover:text-[#3D2B1F] rounded-full transition-all duration-300" data-testid="link-tiktok">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 12a4 4 0 1 0 4 4V4c.5 2.5 3 4 5.5 4"/>
+                </svg>
               </a>
             </div>
             
-            <p className="text-[#3D2B1F]/40 text-sm tracking-wide">
+            <p className="text-[#F4C2C2]/40 text-sm tracking-wide">
               © 2025 Diamond Dulceria. All rights reserved.
             </p>
           </div>
