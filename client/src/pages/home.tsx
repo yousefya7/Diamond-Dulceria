@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Plus, Minus, X, Instagram, Facebook, Twitter, Sparkles, Send } from "lucide-react";
+import { ShoppingBag, Plus, Minus, X, Instagram, Sparkles, Send } from "lucide-react";
 
 type CartItem = {
   id: string;
@@ -15,7 +15,7 @@ const products = [
     name: "Strawberry Shortcake Truffles", 
     price: 50, 
     batch: 25,
-    description: "Fresh strawberry cream infused ganache with shortcake crumble coating",
+    description: "Fresh strawberry cream infused ganache with delicate shortcake crumble",
     isCustom: false
   },
   { 
@@ -27,27 +27,50 @@ const products = [
     isCustom: false
   },
   { 
-    id: "gourmet-cookies", 
-    name: "Gourmet Cookies", 
+    id: "signature-cookies", 
+    name: "Signature Cookies", 
     price: 50, 
     batch: 25,
-    description: "Assorted premium cookies with brown butter and sea salt",
+    description: "Our signature brown butter cookies with premium chocolate and sea salt",
     isCustom: false
   },
   { 
-    id: "custom-creation", 
-    name: "Custom Creation Request", 
+    id: "bespoke-creations", 
+    name: "Bespoke Creations", 
     price: 0, 
     batch: 0,
-    description: "Have a unique flavor idea? Submit your custom request for approval",
+    description: "Custom flavors crafted exclusively for you. Subject to approval.",
     isCustom: true
   },
 ];
 
+const DiamondLogo = ({ className = "" }: { className?: string }) => (
+  <svg viewBox="0 0 40 40" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path 
+      d="M20 2L38 15L20 38L2 15L20 2Z" 
+      stroke="currentColor" 
+      strokeWidth="1.5" 
+      strokeLinejoin="round"
+    />
+    <path 
+      d="M2 15H38" 
+      stroke="currentColor" 
+      strokeWidth="1" 
+      opacity="0.6"
+    />
+    <path 
+      d="M20 2L14 15L20 38L26 15L20 2Z" 
+      stroke="currentColor" 
+      strokeWidth="1" 
+      opacity="0.4"
+    />
+  </svg>
+);
+
 export default function Home() {
   const [cart, setCart] = useState<CartItem[]>(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('dymon-cart');
+      const saved = localStorage.getItem('diamond-cart');
       return saved ? JSON.parse(saved) : [];
     }
     return [];
@@ -58,7 +81,7 @@ export default function Home() {
   const [customForm, setCustomForm] = useState({ flavorIdea: '', eventDate: '', name: '', email: '' });
 
   useEffect(() => {
-    localStorage.setItem('dymon-cart', JSON.stringify(cart));
+    localStorage.setItem('diamond-cart', JSON.stringify(cart));
   }, [cart]);
 
   const addToCart = (product: typeof products[0]) => {
@@ -79,16 +102,13 @@ export default function Home() {
   };
 
   const updateQuantity = (id: string, delta: number) => {
-    setCart(prev => {
-      const updated = prev.map(item => {
-        if (item.id === id) {
-          const newQty = item.quantity + delta;
-          return newQty > 0 ? { ...item, quantity: newQty } : item;
-        }
-        return item;
-      }).filter(item => item.quantity > 0 || delta >= 0);
-      return updated.filter(item => item.quantity > 0);
-    });
+    setCart(prev => prev.map(item => {
+      if (item.id === id) {
+        const newQty = item.quantity + delta;
+        return newQty > 0 ? { ...item, quantity: newQty } : item;
+      }
+      return item;
+    }).filter(item => item.quantity > 0));
   };
 
   const removeItem = (id: string) => {
@@ -102,34 +122,34 @@ export default function Home() {
       setCustomModalOpen(false);
       setFormSubmitted(false);
       setCustomForm({ flavorIdea: '', eventDate: '', name: '', email: '' });
-    }, 2000);
+    }, 2500);
   };
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen" style={{ backgroundColor: '#F4C2C2' }}>
       {/* Sticky Header */}
-      <header className="sticky top-0 z-40 bg-[#3D2B1F] shadow-lg">
+      <header className="sticky top-0 z-40 glass-cocoa shadow-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 sm:h-20">
-            <div className="flex items-center gap-2">
-              <span className="text-[#FF66B2] text-2xl">✦</span>
+            <div className="flex items-center gap-3">
+              <DiamondLogo className="w-8 h-8 sm:w-10 sm:h-10 text-[#F4C2C2]" />
               <div>
-                <h1 className="font-display text-xl sm:text-2xl text-white tracking-wide">DYMON DULCERÍA</h1>
-                <p className="text-[#FF66B2] text-[10px] sm:text-xs tracking-[0.2em]">ESTD. 2025</p>
+                <h1 className="font-display text-lg sm:text-xl text-[#F4C2C2] tracking-[0.15em]">DIAMOND DULCERIA</h1>
+                <p className="text-[#F4C2C2]/60 text-[10px] tracking-[0.25em]">ESTD. 2025</p>
               </div>
             </div>
             
             <button
               onClick={() => setCartOpen(true)}
-              className="relative p-3 sm:p-4 bg-[#FF66B2] hover:bg-[#FF4DA6] text-white rounded-full transition-all duration-300 active:scale-95"
+              className="relative p-3 sm:p-4 bg-[#F4C2C2] hover:bg-[#e8b0b0] text-[#3D2B1F] rounded-full transition-all duration-300 active:scale-95"
               data-testid="button-cart"
             >
               <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6" />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-6 h-6 bg-white text-[#3D2B1F] text-xs font-bold flex items-center justify-center rounded-full">
+                <span className="absolute -top-1 -right-1 w-6 h-6 bg-[#3D2B1F] text-[#F4C2C2] text-xs font-bold flex items-center justify-center rounded-full">
                   {cartCount}
                 </span>
               )}
@@ -139,10 +159,10 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative py-16 sm:py-24 px-4 bg-gradient-to-b from-[#3D2B1F] to-[#2a1e15] overflow-hidden">
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-10 left-10 w-32 h-32 rounded-full bg-[#FF66B2] blur-3xl" />
-          <div className="absolute bottom-10 right-10 w-48 h-48 rounded-full bg-[#FF66B2] blur-3xl" />
+      <section className="relative py-20 sm:py-32 px-4 overflow-hidden">
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute top-20 left-1/4 w-64 h-64 rounded-full bg-[#3D2B1F]/10 blur-3xl" />
+          <div className="absolute bottom-20 right-1/4 w-80 h-80 rounded-full bg-[#3D2B1F]/10 blur-3xl" />
         </div>
         
         <div className="relative max-w-4xl mx-auto text-center">
@@ -151,22 +171,19 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <span className="inline-block px-4 py-2 bg-[#FF66B2]/20 text-[#FF66B2] text-sm tracking-[0.3em] uppercase rounded-full mb-6">
-              Handcrafted with Love
-            </span>
-            <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl text-white leading-tight mb-6">
-              Artisan Truffles &<br />
-              <span className="text-[#FF66B2]">Gourmet Cookies</span>
+            <DiamondLogo className="w-16 h-16 sm:w-20 sm:h-20 text-[#3D2B1F] mx-auto mb-8" />
+            <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl text-[#3D2B1F] leading-tight mb-6 tracking-wide">
+              Artisan Confections
             </h2>
-            <p className="text-white/70 text-lg sm:text-xl max-w-2xl mx-auto mb-8">
-              Every batch is handcrafted to perfection. Order your favorite flavors or request a custom creation.
+            <p className="text-[#3D2B1F]/70 text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
+              Handcrafted truffles and signature cookies, made with passion and the finest ingredients.
             </p>
             <a 
               href="#shop" 
-              className="inline-block px-8 py-4 sm:px-10 sm:py-5 bg-[#FF66B2] hover:bg-[#FF4DA6] text-white text-lg font-medium tracking-wide rounded-full transition-all duration-300 active:scale-95"
+              className="inline-block px-10 py-5 sm:px-12 sm:py-6 bg-[#3D2B1F] hover:bg-[#2a1e15] text-[#F4C2C2] text-lg font-display tracking-[0.2em] transition-all duration-300 active:scale-95"
               data-testid="button-shop-now"
             >
-              Shop Now
+              VIEW COLLECTION
             </a>
           </motion.div>
         </div>
@@ -174,16 +191,20 @@ export default function Home() {
 
       {/* Products Section */}
       <section id="shop" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12 sm:mb-16">
-            <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl text-[#3D2B1F] mb-4">
-              Our Collection
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl text-[#3D2B1F] mb-4 tracking-wide">
+              The Collection
             </h2>
-            <p className="text-[#3D2B1F]/60 text-lg">Fresh batches made to order</p>
-            <div className="w-16 h-1 bg-[#FF66B2] mx-auto mt-6 rounded-full" />
+            <p className="text-[#3D2B1F]/60 text-lg">Each batch handcrafted to order</p>
+            <div className="flex items-center justify-center gap-4 mt-6">
+              <div className="w-12 h-px bg-[#3D2B1F]/30" />
+              <DiamondLogo className="w-5 h-5 text-[#3D2B1F]/40" />
+              <div className="w-12 h-px bg-[#3D2B1F]/30" />
+            </div>
           </div>
 
-          {/* Product Grid - 2 cols desktop, 1 col mobile */}
+          {/* Product Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
             {products.map((product, index) => (
               <motion.div
@@ -192,45 +213,53 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className={`bg-white rounded-2xl shadow-lg overflow-hidden border-2 transition-all duration-300 hover:shadow-xl ${
-                  product.isCustom ? 'border-[#FF66B2] border-dashed' : 'border-transparent hover:border-[#FF66B2]/30'
+                className={`relative overflow-hidden transition-all duration-500 ${
+                  product.isCustom 
+                    ? 'border-2 border-dashed border-[#3D2B1F]/40' 
+                    : 'border border-[#3D2B1F]/10'
                 }`}
+                style={{ backgroundColor: 'rgba(244, 194, 194, 0.5)' }}
                 data-testid={`product-${product.id}`}
               >
+                {/* Glassmorphism overlay for description */}
                 <div className="p-6 sm:p-8">
                   {product.isCustom ? (
-                    <div className="flex items-center gap-2 mb-3">
-                      <Sparkles className="w-5 h-5 text-[#FF66B2]" />
-                      <span className="text-[#FF66B2] text-sm font-medium tracking-wide uppercase">Custom Order</span>
+                    <div className="flex items-center gap-2 mb-4">
+                      <Sparkles className="w-5 h-5 text-[#3D2B1F]" />
+                      <span className="text-[#3D2B1F] text-sm font-display tracking-[0.2em] uppercase">Custom Order</span>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-[#3D2B1F]/50 text-sm tracking-wide uppercase">Batch of {product.batch}</span>
-                      <span className="text-[#FF66B2] font-display text-2xl sm:text-3xl">${product.price}</span>
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-[#3D2B1F]/50 text-sm tracking-[0.15em] uppercase">Batch of {product.batch}</span>
+                      <span className="font-display text-2xl sm:text-3xl text-[#3D2B1F]">${product.price}</span>
                     </div>
                   )}
                   
-                  <h3 className="font-display text-xl sm:text-2xl text-[#3D2B1F] mb-3">{product.name}</h3>
-                  <p className="text-[#3D2B1F]/60 text-sm sm:text-base leading-relaxed mb-6">{product.description}</p>
+                  <h3 className="font-display text-xl sm:text-2xl text-[#3D2B1F] mb-4 tracking-wide">{product.name}</h3>
+                  
+                  {/* Glassmorphism description box */}
+                  <div className="glass-cocoa rounded-lg p-4 mb-6">
+                    <p className="text-[#F4C2C2]/90 text-sm sm:text-base leading-relaxed">{product.description}</p>
+                  </div>
                   
                   <button
                     onClick={() => addToCart(product)}
-                    className={`w-full py-4 sm:py-5 text-base sm:text-lg font-medium tracking-wide rounded-xl transition-all duration-300 flex items-center justify-center gap-2 active:scale-[0.98] ${
+                    className={`w-full py-5 sm:py-6 text-base sm:text-lg font-display tracking-[0.15em] transition-all duration-300 flex items-center justify-center gap-3 active:scale-[0.98] ${
                       product.isCustom 
-                        ? 'bg-[#3D2B1F] hover:bg-[#2a1e15] text-white' 
-                        : 'bg-[#FF66B2] hover:bg-[#FF4DA6] text-white'
+                        ? 'bg-transparent border-2 border-[#3D2B1F] text-[#3D2B1F] hover:bg-[#3D2B1F] hover:text-[#F4C2C2]' 
+                        : 'bg-[#3D2B1F] text-[#F4C2C2] hover:bg-[#2a1e15]'
                     }`}
                     data-testid={`add-${product.id}`}
                   >
                     {product.isCustom ? (
                       <>
                         <Send className="w-5 h-5" />
-                        Request Quote
+                        REQUEST QUOTE
                       </>
                     ) : (
                       <>
                         <Plus className="w-5 h-5" />
-                        Add to Cart
+                        ADD TO CART
                       </>
                     )}
                   </button>
@@ -242,32 +271,25 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-[#3D2B1F] py-12 sm:py-16 px-4">
-        <div className="max-w-7xl mx-auto text-center">
-          <div className="mb-8">
-            <h3 className="font-display text-2xl sm:text-3xl text-white mb-2">DYMON DULCERÍA</h3>
-            <p className="text-[#FF66B2] text-sm tracking-[0.3em]">ESTD. 2025</p>
-          </div>
+      <footer className="py-16 sm:py-20 px-4 border-t border-[#3D2B1F]/10">
+        <div className="max-w-6xl mx-auto text-center">
+          <DiamondLogo className="w-12 h-12 text-[#3D2B1F] mx-auto mb-6" />
+          <h3 className="font-display text-2xl sm:text-3xl text-[#3D2B1F] tracking-[0.2em] mb-2">DIAMOND DULCERIA</h3>
+          <p className="text-[#3D2B1F]/50 text-sm tracking-[0.3em] mb-8">ESTD. 2025</p>
           
-          <div className="flex justify-center gap-6 mb-8">
-            <a href="#" className="p-3 rounded-full bg-[#FF66B2]/20 hover:bg-[#FF66B2] text-[#FF66B2] hover:text-white transition-all duration-300" data-testid="link-instagram">
-              <Instagram className="w-6 h-6" />
-            </a>
-            <a href="#" className="p-3 rounded-full bg-[#FF66B2]/20 hover:bg-[#FF66B2] text-[#FF66B2] hover:text-white transition-all duration-300" data-testid="link-facebook">
-              <Facebook className="w-6 h-6" />
-            </a>
-            <a href="#" className="p-3 rounded-full bg-[#FF66B2]/20 hover:bg-[#FF66B2] text-[#FF66B2] hover:text-white transition-all duration-300" data-testid="link-twitter">
-              <Twitter className="w-6 h-6" />
+          <div className="flex justify-center gap-4 mb-10">
+            <a href="#" className="p-4 border border-[#3D2B1F]/20 text-[#3D2B1F] hover:bg-[#3D2B1F] hover:text-[#F4C2C2] transition-all duration-300" data-testid="link-instagram">
+              <Instagram className="w-5 h-5" />
             </a>
           </div>
           
-          <p className="text-white/50 text-sm">
-            © 2025 DYMON DULCERÍA. All rights reserved.
+          <p className="text-[#3D2B1F]/40 text-sm tracking-wide">
+            © 2025 Diamond Dulceria. All rights reserved.
           </p>
         </div>
       </footer>
 
-      {/* Sliding Cart */}
+      {/* Sliding Mini-Cart */}
       <AnimatePresence>
         {cartOpen && (
           <>
@@ -275,7 +297,7 @@ export default function Home() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 z-50"
+              className="fixed inset-0 bg-[#3D2B1F]/60 backdrop-blur-sm z-50"
               onClick={() => setCartOpen(false)}
             />
             <motion.div
@@ -283,13 +305,17 @@ export default function Home() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed right-0 top-0 h-full w-full max-w-md bg-white z-50 shadow-2xl flex flex-col"
+              className="fixed right-0 top-0 h-full w-full max-w-md z-50 shadow-2xl flex flex-col"
+              style={{ backgroundColor: '#F4C2C2' }}
             >
-              <div className="p-6 bg-[#3D2B1F] flex justify-between items-center">
-                <h3 className="font-display text-xl text-white">Your Cart</h3>
+              <div className="p-6 glass-cocoa flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <DiamondLogo className="w-6 h-6 text-[#F4C2C2]" />
+                  <h3 className="font-display text-xl text-[#F4C2C2] tracking-wide">Your Cart</h3>
+                </div>
                 <button 
                   onClick={() => setCartOpen(false)} 
-                  className="p-2 text-white/70 hover:text-white transition-colors"
+                  className="p-2 text-[#F4C2C2]/70 hover:text-[#F4C2C2] transition-colors"
                   data-testid="button-close-cart"
                 >
                   <X className="w-6 h-6" />
@@ -298,22 +324,22 @@ export default function Home() {
               
               <div className="flex-1 overflow-y-auto p-6">
                 {cart.length === 0 ? (
-                  <div className="text-center py-12">
+                  <div className="text-center py-16">
                     <ShoppingBag className="w-16 h-16 text-[#3D2B1F]/20 mx-auto mb-4" />
-                    <p className="text-[#3D2B1F]/50">Your cart is empty</p>
+                    <p className="text-[#3D2B1F]/50 font-display tracking-wide">Your cart is empty</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {cart.map(item => (
-                      <div key={item.id} className="bg-cream rounded-xl p-4">
-                        <div className="flex justify-between items-start mb-3">
+                      <div key={item.id} className="bg-white/50 backdrop-blur-sm p-5" style={{ border: '1px solid rgba(61,43,31,0.1)' }}>
+                        <div className="flex justify-between items-start mb-4">
                           <div className="flex-1 pr-4">
-                            <h4 className="font-display text-lg text-[#3D2B1F]">{item.name}</h4>
-                            <p className="text-[#FF66B2] font-medium">${item.price} × {item.quantity}</p>
+                            <h4 className="font-display text-lg text-[#3D2B1F] tracking-wide">{item.name}</h4>
+                            <p className="text-[#3D2B1F]/60 text-sm">${item.price} × {item.quantity}</p>
                           </div>
                           <button 
                             onClick={() => removeItem(item.id)}
-                            className="p-1 text-[#3D2B1F]/40 hover:text-[#FF66B2] transition-colors"
+                            className="p-1 text-[#3D2B1F]/40 hover:text-[#3D2B1F] transition-colors"
                             data-testid={`remove-${item.id}`}
                           >
                             <X className="w-5 h-5" />
@@ -322,7 +348,7 @@ export default function Home() {
                         <div className="flex items-center gap-3">
                           <button 
                             onClick={() => updateQuantity(item.id, -1)}
-                            className="w-10 h-10 flex items-center justify-center rounded-lg bg-white border-2 border-[#3D2B1F]/10 text-[#3D2B1F] hover:border-[#FF66B2] hover:text-[#FF66B2] transition-colors"
+                            className="w-12 h-12 flex items-center justify-center border border-[#3D2B1F]/20 text-[#3D2B1F] hover:bg-[#3D2B1F] hover:text-[#F4C2C2] transition-colors"
                             data-testid={`decrease-${item.id}`}
                           >
                             <Minus className="w-4 h-4" />
@@ -330,7 +356,7 @@ export default function Home() {
                           <span className="w-12 text-center font-display text-xl text-[#3D2B1F]">{item.quantity}</span>
                           <button 
                             onClick={() => updateQuantity(item.id, 1)}
-                            className="w-10 h-10 flex items-center justify-center rounded-lg bg-white border-2 border-[#3D2B1F]/10 text-[#3D2B1F] hover:border-[#FF66B2] hover:text-[#FF66B2] transition-colors"
+                            className="w-12 h-12 flex items-center justify-center border border-[#3D2B1F]/20 text-[#3D2B1F] hover:bg-[#3D2B1F] hover:text-[#F4C2C2] transition-colors"
                             data-testid={`increase-${item.id}`}
                           >
                             <Plus className="w-4 h-4" />
@@ -343,16 +369,16 @@ export default function Home() {
               </div>
               
               {cart.length > 0 && (
-                <div className="p-6 border-t border-[#3D2B1F]/10 bg-cream">
+                <div className="p-6 glass-cocoa">
                   <div className="flex justify-between items-center mb-6">
-                    <span className="text-[#3D2B1F]/60 text-lg">Subtotal</span>
-                    <span className="font-display text-3xl text-[#3D2B1F]">${subtotal}</span>
+                    <span className="text-[#F4C2C2]/70 text-lg tracking-wide">Total</span>
+                    <span className="font-display text-3xl text-[#F4C2C2]">${subtotal}</span>
                   </div>
                   <button
-                    className="w-full py-5 bg-[#FF66B2] hover:bg-[#FF4DA6] text-white text-lg font-medium tracking-wide rounded-xl transition-all duration-300 active:scale-[0.98]"
+                    className="w-full py-5 bg-[#F4C2C2] hover:bg-[#e8b0b0] text-[#3D2B1F] text-lg font-display tracking-[0.15em] transition-all duration-300 active:scale-[0.98]"
                     data-testid="button-checkout"
                   >
-                    Proceed to Checkout
+                    CHECKOUT
                   </button>
                 </div>
               )}
@@ -361,116 +387,113 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* Custom Request Modal */}
+      {/* Bespoke Request Modal */}
       <AnimatePresence>
         {customModalOpen && (
-          <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-[#3D2B1F]/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => !formSubmitted && setCustomModalOpen(false)}
+          >
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-              onClick={() => !formSubmitted && setCustomModalOpen(false)}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-lg overflow-hidden shadow-2xl"
+              style={{ backgroundColor: '#F4C2C2' }}
+              onClick={(e) => e.stopPropagation()}
             >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="p-6 bg-[#3D2B1F] flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-[#FF66B2]" />
-                    <h3 className="font-display text-xl text-white">Custom Creation Request</h3>
-                  </div>
-                  <button 
-                    onClick={() => setCustomModalOpen(false)}
-                    className="p-2 text-white/70 hover:text-white transition-colors"
-                    data-testid="button-close-modal"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
+              <div className="p-6 glass-cocoa flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <Sparkles className="w-5 h-5 text-[#F4C2C2]" />
+                  <h3 className="font-display text-xl text-[#F4C2C2] tracking-wide">Bespoke Creation</h3>
                 </div>
+                <button 
+                  onClick={() => setCustomModalOpen(false)}
+                  className="p-2 text-[#F4C2C2]/70 hover:text-[#F4C2C2] transition-colors"
+                  data-testid="button-close-modal"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
 
-                {formSubmitted ? (
-                  <div className="p-8 text-center">
-                    <div className="w-16 h-16 bg-[#FF66B2]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Sparkles className="w-8 h-8 text-[#FF66B2]" />
-                    </div>
-                    <h4 className="font-display text-2xl text-[#3D2B1F] mb-2">Request Submitted!</h4>
-                    <p className="text-[#3D2B1F]/60">We'll review your idea and get back to you soon.</p>
+              {formSubmitted ? (
+                <div className="p-10 text-center">
+                  <DiamondLogo className="w-16 h-16 text-[#3D2B1F] mx-auto mb-6" />
+                  <h4 className="font-display text-2xl text-[#3D2B1F] mb-3 tracking-wide">Request Submitted</h4>
+                  <p className="text-[#3D2B1F]/60">We'll review your idea and be in touch soon.</p>
+                </div>
+              ) : (
+                <form onSubmit={handleCustomSubmit} className="p-6 sm:p-8 space-y-5">
+                  <p className="text-[#3D2B1F]/70 text-sm mb-2">
+                    Share your vision for a custom creation. All requests subject to approval.
+                  </p>
+                  
+                  <div>
+                    <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">Your Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={customForm.name}
+                      onChange={(e) => setCustomForm(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full px-4 py-4 bg-white/70 border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] text-lg"
+                      placeholder="Jane Doe"
+                      data-testid="input-name"
+                    />
                   </div>
-                ) : (
-                  <form onSubmit={handleCustomSubmit} className="p-6 space-y-5">
-                    <p className="text-[#3D2B1F]/70 text-sm mb-4">
-                      Tell us about your dream dessert! All custom requests are subject to approval.
-                    </p>
-                    
-                    <div>
-                      <label className="block text-[#3D2B1F] font-medium mb-2">Your Name</label>
-                      <input
-                        type="text"
-                        required
-                        value={customForm.name}
-                        onChange={(e) => setCustomForm(prev => ({ ...prev, name: e.target.value }))}
-                        className="w-full px-4 py-4 rounded-xl border-2 border-[#3D2B1F]/10 focus:border-[#FF66B2] outline-none transition-colors text-lg"
-                        placeholder="Jane Doe"
-                        data-testid="input-name"
-                      />
-                    </div>
 
-                    <div>
-                      <label className="block text-[#3D2B1F] font-medium mb-2">Email Address</label>
-                      <input
-                        type="email"
-                        required
-                        value={customForm.email}
-                        onChange={(e) => setCustomForm(prev => ({ ...prev, email: e.target.value }))}
-                        className="w-full px-4 py-4 rounded-xl border-2 border-[#3D2B1F]/10 focus:border-[#FF66B2] outline-none transition-colors text-lg"
-                        placeholder="jane@email.com"
-                        data-testid="input-email"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-[#3D2B1F] font-medium mb-2">Flavor Idea</label>
-                      <textarea
-                        required
-                        value={customForm.flavorIdea}
-                        onChange={(e) => setCustomForm(prev => ({ ...prev, flavorIdea: e.target.value }))}
-                        className="w-full px-4 py-4 rounded-xl border-2 border-[#3D2B1F]/10 focus:border-[#FF66B2] outline-none transition-colors text-lg resize-none"
-                        rows={3}
-                        placeholder="Describe your dream flavor combination..."
-                        data-testid="input-flavor"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-[#3D2B1F] font-medium mb-2">Event Date</label>
-                      <input
-                        type="date"
-                        required
-                        value={customForm.eventDate}
-                        onChange={(e) => setCustomForm(prev => ({ ...prev, eventDate: e.target.value }))}
-                        className="w-full px-4 py-4 rounded-xl border-2 border-[#3D2B1F]/10 focus:border-[#FF66B2] outline-none transition-colors text-lg"
-                        data-testid="input-date"
-                      />
-                    </div>
-                    
-                    <button
-                      type="submit"
-                      className="w-full py-5 bg-[#FF66B2] hover:bg-[#FF4DA6] text-white text-lg font-medium tracking-wide rounded-xl transition-all duration-300 flex items-center justify-center gap-2 active:scale-[0.98]"
-                      data-testid="button-submit-request"
-                    >
-                      <Send className="w-5 h-5" />
-                      Submit Request
-                    </button>
-                  </form>
-                )}
-              </motion.div>
+                  <div>
+                    <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">Email</label>
+                    <input
+                      type="email"
+                      required
+                      value={customForm.email}
+                      onChange={(e) => setCustomForm(prev => ({ ...prev, email: e.target.value }))}
+                      className="w-full px-4 py-4 bg-white/70 border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] text-lg"
+                      placeholder="jane@email.com"
+                      data-testid="input-email"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">Flavor Idea</label>
+                    <textarea
+                      required
+                      value={customForm.flavorIdea}
+                      onChange={(e) => setCustomForm(prev => ({ ...prev, flavorIdea: e.target.value }))}
+                      className="w-full px-4 py-4 bg-white/70 border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] text-lg resize-none"
+                      rows={3}
+                      placeholder="Describe your dream flavor..."
+                      data-testid="input-flavor"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">Event Date</label>
+                    <input
+                      type="date"
+                      required
+                      value={customForm.eventDate}
+                      onChange={(e) => setCustomForm(prev => ({ ...prev, eventDate: e.target.value }))}
+                      className="w-full px-4 py-4 bg-white/70 border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] text-lg"
+                      data-testid="input-date"
+                    />
+                  </div>
+                  
+                  <button
+                    type="submit"
+                    className="w-full py-5 bg-[#3D2B1F] hover:bg-[#2a1e15] text-[#F4C2C2] text-lg font-display tracking-[0.15em] transition-all duration-300 flex items-center justify-center gap-3 active:scale-[0.98]"
+                    data-testid="button-submit-request"
+                  >
+                    <Send className="w-5 h-5" />
+                    SUBMIT REQUEST
+                  </button>
+                </form>
+              )}
             </motion.div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
