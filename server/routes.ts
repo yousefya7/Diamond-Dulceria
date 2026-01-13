@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertOrderSchema } from "@shared/schema";
+import { sendOrderNotification } from "./email";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -13,8 +14,17 @@ export async function registerRoutes(
       const validatedData = insertOrderSchema.parse(req.body);
       const order = await storage.createOrder(validatedData);
       
-      // TODO: Send email notification to business owner
-      // This will be implemented once email integration is set up
+      // Send email notification to business owner
+      await sendOrderNotification({
+        id: order.id,
+        customerName: order.customerName,
+        customerEmail: order.customerEmail,
+        customerPhone: order.customerPhone,
+        deliveryAddress: order.deliveryAddress,
+        specialInstructions: order.specialInstructions,
+        items: order.items,
+        total: order.total,
+      });
       
       res.status(201).json({ success: true, order });
     } catch (error) {
