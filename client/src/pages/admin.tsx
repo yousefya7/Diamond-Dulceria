@@ -226,7 +226,7 @@ export default function Admin() {
                       <div className="flex items-start gap-3 sm:col-span-2">
                         <MapPin className="w-4 h-4 text-[#3D2B1F]/50 mt-1" />
                         <div>
-                          <p className="text-xs text-[#3D2B1F]/50">Delivery Address</p>
+                          <p className="text-xs text-[#3D2B1F]/50">Billing Address</p>
                           <p className="text-[#3D2B1F]">{order.deliveryAddress}</p>
                         </div>
                       </div>

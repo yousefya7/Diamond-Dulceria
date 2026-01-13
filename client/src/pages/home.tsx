@@ -167,7 +167,10 @@ export default function Home() {
     name: '',
     email: '',
     phone: '',
-    address: '',
+    street: '',
+    city: '',
+    state: '',
+    zip: '',
     notes: ''
   });
   
@@ -213,7 +216,7 @@ export default function Home() {
         customerName: checkoutForm.name,
         customerEmail: checkoutForm.email,
         customerPhone: checkoutForm.phone,
-        deliveryAddress: checkoutForm.address,
+        deliveryAddress: `${checkoutForm.street}, ${checkoutForm.city}, ${checkoutForm.state} ${checkoutForm.zip}`,
         specialInstructions: checkoutForm.notes || null,
         items: cart,
         total: subtotal,
@@ -236,7 +239,7 @@ export default function Home() {
         setCheckoutModalOpen(false);
         setOrderPlaced(false);
         setCart([]); // Clear cart after order
-        setCheckoutForm({ name: '', email: '', phone: '', address: '', notes: '' });
+        setCheckoutForm({ name: '', email: '', phone: '', street: '', city: '', state: '', zip: '', notes: '' });
       }, 3000);
     } catch (error) {
       console.error('Error submitting order:', error);
@@ -968,7 +971,9 @@ export default function Home() {
                     </div>
 
                     <div>
-                      <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">Full Name</label>
+                      <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">
+                        Full Name <span className="text-red-500">*</span>
+                      </label>
                       <input
                         type="text"
                         required
@@ -981,7 +986,9 @@ export default function Home() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       <div>
-                        <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">Phone Number</label>
+                        <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">
+                          Phone Number <span className="text-red-500">*</span>
+                        </label>
                         <input
                           type="tel"
                           required
@@ -1004,16 +1011,64 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">Delivery Address</label>
-                      <textarea
-                        required
-                        value={checkoutForm.address}
-                        onChange={(e) => setCheckoutForm(prev => ({ ...prev, address: e.target.value }))}
-                        className="w-full px-4 py-3 bg-white border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] resize-none rounded-lg"
-                        rows={3}
-                        placeholder="Enter your full delivery address..."
-                      />
+                    <div className="space-y-4">
+                      <h4 className="text-[#3D2B1F] font-display tracking-wide text-sm">
+                        Billing Address <span className="text-red-500">*</span>
+                      </h4>
+                      <div>
+                        <label className="block text-[#3D2B1F]/70 text-xs mb-1">
+                          Street Address <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={checkoutForm.street}
+                          onChange={(e) => setCheckoutForm(prev => ({ ...prev, street: e.target.value }))}
+                          className="w-full px-4 py-3 bg-white border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] rounded-lg"
+                          placeholder="123 Main Street"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <div className="col-span-2 sm:col-span-1">
+                          <label className="block text-[#3D2B1F]/70 text-xs mb-1">
+                            City <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={checkoutForm.city}
+                            onChange={(e) => setCheckoutForm(prev => ({ ...prev, city: e.target.value }))}
+                            className="w-full px-4 py-3 bg-white border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] rounded-lg"
+                            placeholder="City"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[#3D2B1F]/70 text-xs mb-1">
+                            State <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={checkoutForm.state}
+                            onChange={(e) => setCheckoutForm(prev => ({ ...prev, state: e.target.value }))}
+                            className="w-full px-4 py-3 bg-white border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] rounded-lg"
+                            placeholder="State"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[#3D2B1F]/70 text-xs mb-1">
+                            Zip Code <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={checkoutForm.zip}
+                            onChange={(e) => setCheckoutForm(prev => ({ ...prev, zip: e.target.value }))}
+                            className="w-full px-4 py-3 bg-white border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] rounded-lg"
+                            placeholder="12345"
+                          />
+                        </div>
+                      </div>
                     </div>
 
                     <div>

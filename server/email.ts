@@ -83,7 +83,7 @@ export async function sendOrderNotification(order: OrderData): Promise<boolean> 
       </div>
       
       <div class="section">
-        <div class="section-title">Delivery Address</div>
+        <div class="section-title">Billing Address</div>
         <div class="info-row">${order.deliveryAddress}</div>
       </div>
       
