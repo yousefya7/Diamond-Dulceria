@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertOrderSchema } from "@shared/schema";
-import { sendOrderNotification } from "./email";
+import { sendOrderNotification, sendCustomerConfirmation } from "./email";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -14,8 +14,7 @@ export async function registerRoutes(
       const validatedData = insertOrderSchema.parse(req.body);
       const order = await storage.createOrder(validatedData);
       
-      // Send email notification to business owner
-      await sendOrderNotification({
+      const orderData = {
         id: order.id,
         customerName: order.customerName,
         customerEmail: order.customerEmail,
@@ -24,7 +23,13 @@ export async function registerRoutes(
         specialInstructions: order.specialInstructions,
         items: order.items,
         total: order.total,
-      });
+      };
+      
+      // Send both emails in parallel
+      await Promise.all([
+        sendOrderNotification(orderData),      // Email to business owner
+        sendCustomerConfirmation(orderData),   // Confirmation to customer
+      ]);
       
       res.status(201).json({ success: true, order });
     } catch (error) {
