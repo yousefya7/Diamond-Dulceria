@@ -18,7 +18,7 @@ const products = [
     description: "Pistachio cream & toasted kataifi filling wrapped in dark chocolate",
     isCustom: false,
     category: "truffle",
-    image: "/dubai_chocolate_1768272691835.jpg", // <!-- UPLOAD PRODUCT IMAGE HERE -->
+    image: "/dubai_chocolate_truffles_1768273692163.jpg", // <!-- UPLOAD PRODUCT IMAGE HERE -->
     trending: true
   },
   { 
@@ -79,7 +79,7 @@ const products = [
     description: "Our signature brown butter cookies with premium chocolate and sea salt",
     isCustom: false,
     category: "cookie",
-    image: "" // <!-- UPLOAD PRODUCT IMAGE HERE -->
+    image: "/signature_cookies_1768273692165.jpg" // <!-- UPLOAD PRODUCT IMAGE HERE -->
   },
   { 
     id: "bespoke-diamond", 
@@ -729,8 +729,8 @@ export default function Home() {
                 <Instagram className="w-5 h-5" />
               </a>
               <a href="#" className="p-4 border border-[#F4C2C2]/30 text-[#F4C2C2] hover:bg-[#F4C2C2] hover:text-[#3D2B1F] rounded-full transition-all duration-300" data-testid="link-snapchat">
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2.5c-3.5 0-5.5 2.5-5.5 5.5v2c-1.5.5-2.5 1-2.5 1.5 0 .5 1 .5 1 1s-1 1-1 2 2 2 3 2c0 1 .5 2 1 2.5s2 2 4 2 3.5-1.5 4-2 1-1.5 1-2.5c1 0 3-1 3-2s-1-1.5-1-2 1-.5 1-1-1-1-2.5-1.5v-2c0-3-2-5.5-5.5-5.5z"/>
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2.5c-2.8 0-4.5 1.8-4.5 4.5v2.5c0 .2-.1.3-.3.4-1.2.4-2 .7-2.2 1.1-.1.2-.1.4 0 .6.2.3.7.4 1.3.5.3 0 .5.1.6.2.1.1.1.3 0 .5-.2.5-.5 1-.8 1.4-.4.5-.3 1 .3 1.3.5.3 1.1.5 1.6.6.1 0 .2.1.2.2.1.4.2.8.4 1.1.2.4.6.8 1.2 1.2 1.3.9 3.1 1.4 4.2 1.4s2.9-.5 4.2-1.4c.6-.4 1-.8 1.2-1.2.2-.3.3-.7.4-1.1 0-.1.1-.2.2-.2.5-.1 1.1-.3 1.6-.6.6-.3.7-.8.3-1.3-.3-.4-.6-.9-.8-1.4-.1-.2-.1-.4 0-.5.1-.1.3-.2.6-.2.6-.1 1.1-.2 1.3-.5.1-.2.1-.4 0-.6-.2-.4-1-.7-2.2-1.1-.2-.1-.3-.2-.3-.4V7c0-2.7-1.7-4.5-4.5-4.5z"/>
                 </svg>
               </a>
               <a href="#" className="p-4 border border-[#F4C2C2]/30 text-[#F4C2C2] hover:bg-[#F4C2C2] hover:text-[#3D2B1F] rounded-full transition-all duration-300" data-testid="link-tiktok">
