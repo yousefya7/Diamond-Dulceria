@@ -9,7 +9,7 @@ type Order = {
   customerPhone: string;
   deliveryAddress: string;
   specialInstructions: string | null;
-  items: Array<{ id: string; name: string; price: number; quantity: number }>;
+  items: Array<{ id: string; name: string; price: number; quantity: number; customNotes?: string }>;
   total: number;
   status: string;
   createdAt: string;
@@ -237,6 +237,17 @@ export default function Admin() {
                             <p className="text-xs text-[#3D2B1F]/50">Special Instructions</p>
                             <p className="text-[#3D2B1F]">{order.specialInstructions}</p>
                           </div>
+                        </div>
+                      )}
+                      {order.items.some(i => i.customNotes) && (
+                        <div className="sm:col-span-2 mt-2">
+                          <p className="text-xs text-[#D4AF37] font-medium mb-2">Custom Order Requests:</p>
+                          {order.items.filter(i => i.customNotes).map((item, idx) => (
+                            <div key={idx} className="p-3 bg-[#D4AF37]/10 rounded-lg border border-[#D4AF37]/20 mb-2">
+                              <p className="font-medium text-[#3D2B1F] text-sm mb-1">{item.name}</p>
+                              <p className="text-[#3D2B1F]/70 text-xs whitespace-pre-line">{item.customNotes}</p>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>

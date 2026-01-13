@@ -38,7 +38,11 @@ The email notification system uses Resend for sending beautiful HTML emails:
 - Full-stack upgrade with PostgreSQL database
 - Order submission and storage system
 - Admin dashboard with real-time order viewing
-- Email notification foundation
+- Email notification via Resend API
+- Pickup notice added to cart drawer and checkout modal
+- Fixed View Collection button to scroll to products
+- Bespoke Creation can now be added to cart as $0 item with custom notes
+- Custom notes displayed in cart, admin dashboard, and email notifications
 
 ## User Preferences
 - Luxury aesthetic with gold accents (#D4AF37)

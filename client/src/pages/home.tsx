@@ -7,6 +7,7 @@ type CartItem = {
   name: string;
   price: number;
   quantity: number;
+  customNotes?: string;
 };
 
 const products = [
@@ -183,12 +184,16 @@ export default function Home() {
     localStorage.setItem('diamond-cart', JSON.stringify(cart));
   }, [cart]);
 
-  const addToCart = (product: typeof products[0]) => {
-    if (product.isCustom) {
+  const addToCart = (product: typeof products[0], customNotes?: string) => {
+    if (product.isCustom && !customNotes) {
       setCustomModalOpen(true);
       return;
     }
     setCart(prev => {
+      // For custom products, always add as new item (don't combine)
+      if (product.isCustom) {
+        return [...prev, { id: `${product.id}-${Date.now()}`, name: product.name, price: product.price, quantity: 1, customNotes }];
+      }
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
         return prev.map(item => 
@@ -255,6 +260,12 @@ export default function Home() {
 
   const handleCustomSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Add bespoke as a $0 item with custom notes
+    const bespokeProduct = products.find(p => p.isCustom);
+    if (bespokeProduct) {
+      const customNotes = `Name: ${customForm.name}\nEmail: ${customForm.email}\nFlavor Idea: ${customForm.flavorIdea}\nEvent Date: ${customForm.eventDate}`;
+      addToCart(bespokeProduct, customNotes);
+    }
     setFormSubmitted(true);
     setTimeout(() => {
       setCustomModalOpen(false);
@@ -530,13 +541,13 @@ export default function Home() {
               <p className="text-[#3D2B1F]/70 text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
                 Handcrafted truffles and signature cookies, made with passion and the finest ingredients.
               </p>
-              <a 
-                href="#shop" 
-                className="inline-block px-12 py-5 sm:px-16 sm:py-6 bg-[#3D2B1F] hover:bg-[#2a1e15] text-[#F9F1F1] text-lg font-display tracking-[0.2em] rounded-full transition-all duration-300 active:scale-95"
+              <button 
+                onClick={() => document.getElementById('truffles')?.scrollIntoView({ behavior: 'smooth' })}
+                className="inline-block px-12 py-5 sm:px-16 sm:py-6 bg-[#3D2B1F] hover:bg-[#2a1e15] text-[#F9F1F1] text-lg font-display tracking-[0.2em] rounded-full transition-all duration-300 active:scale-95 cursor-pointer"
                 data-testid="button-shop-now"
               >
                 VIEW COLLECTION
-              </a>
+              </button>
             </motion.div>
           </div>
         </section>
@@ -827,7 +838,11 @@ export default function Home() {
                           <div className="flex justify-between items-start mb-4">
                             <div className="flex-1 pr-4">
                               <h4 className="font-display text-lg text-[#3D2B1F] tracking-wide">{item.name}</h4>
-                              <p className="text-[#3D2B1F]/60 text-sm">${item.price} × {item.quantity}</p>
+                              {item.customNotes ? (
+                                <p className="text-[#3D2B1F]/60 text-sm">Custom Request (Quote TBD)</p>
+                              ) : (
+                                <p className="text-[#3D2B1F]/60 text-sm">${item.price} × {item.quantity}</p>
+                              )}
                             </div>
                             <button 
                               onClick={() => removeItem(item.id)}
@@ -837,23 +852,31 @@ export default function Home() {
                               <X className="w-5 h-5" />
                             </button>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <button 
-                              onClick={() => updateQuantity(item.id, -1)}
-                              className="w-12 h-12 flex items-center justify-center border border-[#3D2B1F]/20 text-[#3D2B1F] hover:bg-[#3D2B1F] hover:text-[#F4C2C2] rounded-full transition-colors"
-                              data-testid={`decrease-${item.id}`}
-                            >
-                              <Minus className="w-4 h-4" />
-                            </button>
-                            <span className="w-12 text-center font-display text-xl text-[#3D2B1F]">{item.quantity}</span>
-                            <button 
-                              onClick={() => updateQuantity(item.id, 1)}
-                              className="w-12 h-12 flex items-center justify-center border border-[#3D2B1F]/20 text-[#3D2B1F] hover:bg-[#3D2B1F] hover:text-[#F4C2C2] rounded-full transition-colors"
-                              data-testid={`increase-${item.id}`}
-                            >
-                              <Plus className="w-4 h-4" />
-                            </button>
-                          </div>
+                          {item.customNotes && (
+                            <div className="mb-4 p-3 bg-white/50 rounded-lg text-xs text-[#3D2B1F]/70">
+                              <p className="font-medium text-[#3D2B1F] mb-1">Request Details:</p>
+                              <p className="whitespace-pre-line">{item.customNotes}</p>
+                            </div>
+                          )}
+                          {!item.customNotes && (
+                            <div className="flex items-center gap-3">
+                              <button 
+                                onClick={() => updateQuantity(item.id, -1)}
+                                className="w-12 h-12 flex items-center justify-center border border-[#3D2B1F]/20 text-[#3D2B1F] hover:bg-[#3D2B1F] hover:text-[#F4C2C2] rounded-full transition-colors"
+                                data-testid={`decrease-${item.id}`}
+                              >
+                                <Minus className="w-4 h-4" />
+                              </button>
+                              <span className="w-12 text-center font-display text-xl text-[#3D2B1F]">{item.quantity}</span>
+                              <button 
+                                onClick={() => updateQuantity(item.id, 1)}
+                                className="w-12 h-12 flex items-center justify-center border border-[#3D2B1F]/20 text-[#3D2B1F] hover:bg-[#3D2B1F] hover:text-[#F4C2C2] rounded-full transition-colors"
+                                data-testid={`increase-${item.id}`}
+                              >
+                                <Plus className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -862,9 +885,14 @@ export default function Home() {
                 
                 {cart.length > 0 && (
                   <div className="p-6" style={{ backgroundColor: '#3D2B1F' }}>
-                    <div className="flex justify-between items-center mb-6">
+                    <div className="flex justify-between items-center mb-4">
                       <span className="text-[#F4C2C2]/70 text-lg tracking-wide">Total</span>
                       <span className="font-display text-3xl text-[#F4C2C2]">${subtotal}</span>
+                    </div>
+                    <div className="mb-4 p-3 bg-[#F4C2C2]/10 rounded-lg border border-[#F4C2C2]/20">
+                      <p className="text-[#F4C2C2] text-xs text-center font-medium">
+                        Note: All orders must be picked up unless delivery is coordinated beforehand.
+                      </p>
                     </div>
                     <button
                       onClick={() => {
@@ -1000,9 +1028,14 @@ export default function Home() {
                     </div>
 
                     <div className="pt-2">
-                      <div className="flex justify-between items-center mb-4 text-[#3D2B1F]">
+                      <div className="flex justify-between items-center mb-3 text-[#3D2B1F]">
                         <span className="text-sm opacity-60">Order Total</span>
                         <span className="font-display text-xl">${subtotal}</span>
+                      </div>
+                      <div className="mb-4 p-3 bg-[#D4AF37]/10 rounded-lg border border-[#D4AF37]/30">
+                        <p className="text-[#3D2B1F] text-xs text-center font-bold">
+                          Note: All orders must be picked up unless delivery is coordinated beforehand.
+                        </p>
                       </div>
                       <button
                         type="submit"

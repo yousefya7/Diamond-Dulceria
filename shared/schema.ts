@@ -10,7 +10,7 @@ export const orders = pgTable("orders", {
   customerPhone: text("customer_phone").notNull(),
   deliveryAddress: text("delivery_address").notNull(),
   specialInstructions: text("special_instructions"),
-  items: jsonb("items").notNull().$type<Array<{ id: string; name: string; price: number; quantity: number }>>(),
+  items: jsonb("items").notNull().$type<Array<{ id: string; name: string; price: number; quantity: number; customNotes?: string }>>(),
   total: integer("total").notNull(),
   status: text("status").notNull().default("pending"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

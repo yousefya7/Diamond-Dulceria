@@ -8,6 +8,7 @@ type OrderItem = {
   name: string;
   price: number;
   quantity: number;
+  customNotes?: string;
 };
 
 type OrderData = {
@@ -34,9 +35,15 @@ export async function sendOrderNotification(order: OrderData): Promise<boolean> 
 
   const itemsList = order.items
     .map(item => `<tr>
-      <td style="padding: 12px; border-bottom: 1px solid #eee;">${item.name}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #eee;">
+        ${item.name}
+        ${item.customNotes ? `<div style="margin-top: 8px; padding: 10px; background: #FFF8E7; border-left: 3px solid #D4AF37; font-size: 12px;">
+          <strong style="color: #3D2B1F;">Custom Request Details:</strong><br>
+          <pre style="margin: 5px 0 0; white-space: pre-wrap; font-family: inherit; color: #3D2B1F;">${item.customNotes}</pre>
+        </div>` : ''}
+      </td>
       <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
-      <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">$${item.price * item.quantity}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">${item.customNotes ? 'Quote TBD' : '$' + (item.price * item.quantity)}</td>
     </tr>`)
     .join('');
 
