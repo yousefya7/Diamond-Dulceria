@@ -83,7 +83,7 @@ const products = [
   },
   { 
     id: "bespoke-diamond", 
-    name: "Bespoke Diamond", 
+    name: "Bespoke Creation", 
     price: 0, 
     batch: 0,
     description: "Custom flavors crafted exclusively for you. Subject to approval.",
