@@ -473,43 +473,40 @@ export default function Home() {
         >
           <div className="relative">
             <div 
-              className="flex items-center justify-center gap-8 sm:gap-12 px-4 sm:px-6 py-4 overflow-x-auto scrollbar-hide"
-              style={{ scrollBehavior: 'smooth' }}
+              className="grid grid-cols-2 sm:flex sm:items-center sm:justify-center gap-2 sm:gap-10 px-4 sm:px-6 py-3 sm:py-4 max-w-full"
             >
               <a 
                 href="#truffles" 
                 onClick={(e) => { e.preventDefault(); document.getElementById('truffles')?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="flex-shrink-0 font-display text-base sm:text-lg tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors whitespace-nowrap"
+                className="font-display text-sm sm:text-lg tracking-[0.1em] sm:tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors text-center py-2 px-3 rounded-lg hover:bg-[#3D2B1F]/5 active:bg-[#3D2B1F]/10"
               >
                 Truffles
               </a>
-              <span className="text-[#3D2B1F]/30 text-lg">|</span>
+              <span className="hidden sm:inline text-[#3D2B1F]/30 text-lg">|</span>
               <a 
                 href="#cookies" 
                 onClick={(e) => { e.preventDefault(); document.getElementById('cookies')?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="flex-shrink-0 font-display text-base sm:text-lg tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors whitespace-nowrap"
+                className="font-display text-sm sm:text-lg tracking-[0.1em] sm:tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors text-center py-2 px-3 rounded-lg hover:bg-[#3D2B1F]/5 active:bg-[#3D2B1F]/10"
               >
                 Cookies
               </a>
-              <span className="text-[#3D2B1F]/30 text-lg">|</span>
+              <span className="hidden sm:inline text-[#3D2B1F]/30 text-lg">|</span>
               <a 
                 href="#bespoke" 
                 onClick={(e) => { e.preventDefault(); document.getElementById('bespoke')?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="flex-shrink-0 font-display text-base sm:text-lg tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors whitespace-nowrap"
+                className="font-display text-sm sm:text-lg tracking-[0.1em] sm:tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors text-center py-2 px-3 rounded-lg hover:bg-[#3D2B1F]/5 active:bg-[#3D2B1F]/10"
               >
-                Bespoke
+                Custom
               </a>
-              <span className="text-[#3D2B1F]/30 text-lg">|</span>
+              <span className="hidden sm:inline text-[#3D2B1F]/30 text-lg">|</span>
               <a 
                 href="#wall-of-love" 
                 onClick={(e) => { e.preventDefault(); document.getElementById('wall-of-love')?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="flex-shrink-0 font-display text-base sm:text-lg tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors whitespace-nowrap"
+                className="font-display text-sm sm:text-lg tracking-[0.1em] sm:tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors text-center py-2 px-3 rounded-lg hover:bg-[#3D2B1F]/5 active:bg-[#3D2B1F]/10"
               >
-                Wall of Love
+                Reviews
               </a>
             </div>
-            {/* Fade effect on right edge for mobile */}
-            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-[#F4C2C2] to-transparent pointer-events-none sm:hidden" />
           </div>
         </motion.nav>
 
