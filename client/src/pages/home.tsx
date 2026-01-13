@@ -103,21 +103,21 @@ const reviews = [
     name: "Sarah M.",
     review: "The Dubai Chocolate is life-changing! Best truffles I've ever had.",
     product: "Dubai Chocolate Truffles",
-    image: "" // <!-- UPLOAD REVIEW IMAGE HERE -->
+    image: "/review_dubai.jpg" // <!-- UPLOAD REVIEW IMAGE HERE -->
   },
   {
     id: 2,
     name: "Jessica L.",
-    review: "Ordered for my wedding and guests couldn't stop talking about them!",
-    product: "Cookie Butter Truffles",
-    image: "" // <!-- UPLOAD REVIEW IMAGE HERE -->
+    review: "The biscoff and strawberry shortcake truffles were amazing! Truly a work of art.",
+    product: "Truffle Assortment",
+    image: "/review_mix.jpg" // <!-- UPLOAD REVIEW IMAGE HERE -->
   },
   {
     id: 3,
     name: "Amanda K.",
-    review: "The Snickerdoodles taste like a warm hug. Obsessed!",
-    product: "Snickerdoodle Cookies",
-    image: "" // <!-- UPLOAD REVIEW IMAGE HERE -->
+    review: "The signature cookies are incredible and never fail to impress. Perfect every time.",
+    product: "Signature Cookies",
+    image: "/review_signature.jpg" // <!-- UPLOAD REVIEW IMAGE HERE -->
   },
   {
     id: 4,
