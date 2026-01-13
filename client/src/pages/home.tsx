@@ -427,7 +427,7 @@ export default function Home() {
       </AnimatePresence>
 
       <div className="min-h-screen" style={{ backgroundColor: '#F4C2C2' }}>
-        {/* Sticky Header - Floats in from top */}
+        {/* Sticky Header - Centered Logo with Cart Pinned Right */}
         <motion.header
           initial={{ y: -100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -435,19 +435,21 @@ export default function Home() {
           className="sticky top-0 z-40 shadow-lg"
           style={{ backgroundColor: '#3D2B1F' }}
         >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16 sm:h-20">
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-center h-18 sm:h-24">
+              {/* Centered Logo & Brand */}
               <div className="flex items-center gap-3">
                 <DiamondLogo className="w-8 h-8 sm:w-10 sm:h-10 text-[#F4C2C2]" />
-                <div>
+                <div className="text-center">
                   <h1 className="font-display text-lg sm:text-xl text-[#F4C2C2] tracking-[0.15em]">DIAMOND DULCERIA</h1>
                   <p className="text-[#F4C2C2]/60 text-[10px] tracking-[0.25em]">ESTD. 2025</p>
                 </div>
               </div>
               
+              {/* Cart Button - Pinned to Right */}
               <button
                 onClick={() => setCartOpen(true)}
-                className="relative p-3 sm:p-4 bg-[#F4C2C2] hover:bg-[#e8b0b0] text-[#3D2B1F] rounded-full transition-all duration-300 active:scale-95"
+                className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 p-3 sm:p-4 bg-[#F4C2C2] hover:bg-[#e8b0b0] text-[#3D2B1F] rounded-full transition-all duration-300 active:scale-95"
                 data-testid="button-cart"
               >
                 <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -466,7 +468,7 @@ export default function Home() {
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: loading ? 0 : 2.3, ease: "easeOut" }}
-          className="sticky top-16 sm:top-20 z-30 border-b border-[#3D2B1F]/10"
+          className="sticky top-[72px] sm:top-24 z-30 border-b border-[#3D2B1F]/10"
           style={{ backgroundColor: '#F4C2C2' }}
         >
           <div className="relative">
@@ -550,26 +552,26 @@ export default function Home() {
         </div>
 
         {/* Truffle Collection */}
-        <section id="truffles" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 scroll-mt-28">
+        <section id="truffles" className="py-24 sm:py-36 px-4 sm:px-6 lg:px-8 scroll-mt-28">
           <div className="max-w-6xl mx-auto">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center mb-16"
+              className="text-center mb-16 sm:mb-20"
             >
-              <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl text-[#3D2B1F] mb-4 tracking-wide">
+              <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl text-[#3D2B1F] mb-5 tracking-wide">
                 Truffle Collection
               </h2>
-              <p className="text-[#3D2B1F]/60 text-lg">Luxurious ganache centers, handcrafted to order</p>
-              <div className="flex items-center justify-center gap-4 mt-6">
-                <div className="w-12 h-px bg-[#3D2B1F]/30" />
-                <DiamondLogo className="w-5 h-5 text-[#3D2B1F]/40" />
-                <div className="w-12 h-px bg-[#3D2B1F]/30" />
+              <p className="text-[#3D2B1F]/60 text-lg sm:text-xl max-w-xl mx-auto">Luxurious ganache centers, handcrafted to order</p>
+              <div className="flex items-center justify-center gap-4 mt-8">
+                <div className="w-16 h-px bg-[#3D2B1F]/30" />
+                <DiamondLogo className="w-6 h-6 text-[#3D2B1F]/40" />
+                <div className="w-16 h-px bg-[#3D2B1F]/30" />
               </div>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10">
               {truffles.map((product, index) => (
                 <ProductCard key={product.id} product={product} index={index} />
               ))}
@@ -585,26 +587,26 @@ export default function Home() {
         </div>
 
         {/* Cookie Collection */}
-        <section id="cookies" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 scroll-mt-28">
+        <section id="cookies" className="py-24 sm:py-36 px-4 sm:px-6 lg:px-8 scroll-mt-28">
           <div className="max-w-6xl mx-auto">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center mb-16"
+              className="text-center mb-16 sm:mb-20"
             >
-              <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl text-[#3D2B1F] mb-4 tracking-wide">
+              <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl text-[#3D2B1F] mb-5 tracking-wide">
                 Cookie Collection
               </h2>
-              <p className="text-[#3D2B1F]/60 text-lg">Soft-baked perfection in every bite</p>
-              <div className="flex items-center justify-center gap-4 mt-6">
-                <div className="w-12 h-px bg-[#3D2B1F]/30" />
-                <DiamondLogo className="w-5 h-5 text-[#3D2B1F]/40" />
-                <div className="w-12 h-px bg-[#3D2B1F]/30" />
+              <p className="text-[#3D2B1F]/60 text-lg sm:text-xl max-w-xl mx-auto">Soft-baked perfection in every bite</p>
+              <div className="flex items-center justify-center gap-4 mt-8">
+                <div className="w-16 h-px bg-[#3D2B1F]/30" />
+                <DiamondLogo className="w-6 h-6 text-[#3D2B1F]/40" />
+                <div className="w-16 h-px bg-[#3D2B1F]/30" />
               </div>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-10">
               {cookies.map((product, index) => (
                 <ProductCard key={product.id} product={product} index={index} />
               ))}
@@ -619,20 +621,33 @@ export default function Home() {
           <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
         </div>
 
-        {/* Bespoke Diamond Section */}
-        <section id="bespoke" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 scroll-mt-28">
-          <div className="max-w-2xl mx-auto">
+        {/* Bespoke Diamond Section - Featured Standout */}
+        <section id="bespoke" className="py-28 sm:py-40 px-4 sm:px-6 lg:px-8 scroll-mt-28 relative overflow-hidden">
+          {/* Premium background pattern */}
+          <div className="absolute inset-0 opacity-40">
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-[#D4AF37]/10 blur-3xl" />
+            <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-[#3D2B1F]/5 blur-3xl" />
+          </div>
+          
+          <div className="relative max-w-3xl mx-auto">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center mb-12"
+              className="text-center mb-14 sm:mb-16"
             >
-              <Sparkles className="w-8 h-8 text-[#3D2B1F] mx-auto mb-4" />
-              <h2 className="font-display text-3xl sm:text-4xl text-[#3D2B1F] mb-4 tracking-wide">
+              <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#3D2B1F]/5 border border-[#D4AF37]/30 mb-6">
+                <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 text-[#D4AF37]" />
+              </div>
+              <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl text-[#3D2B1F] mb-5 tracking-wide">
                 Bespoke Creations
               </h2>
-              <p className="text-[#3D2B1F]/60 text-lg">Have a unique flavor in mind?</p>
+              <p className="text-[#3D2B1F]/60 text-lg sm:text-xl max-w-lg mx-auto">Have a unique flavor in mind? Let us craft something extraordinary just for you.</p>
+              <div className="flex items-center justify-center gap-4 mt-8">
+                <div className="w-16 h-px bg-[#D4AF37]/50" />
+                <DiamondLogo className="w-6 h-6 text-[#D4AF37]/60" />
+                <div className="w-16 h-px bg-[#D4AF37]/50" />
+              </div>
             </motion.div>
 
             {custom.map((product, index) => (
@@ -649,107 +664,92 @@ export default function Home() {
         </div>
 
         {/* Diamond Wall of Love - Reviews Section */}
-        <section id="wall-of-love" className="py-16 sm:py-24 overflow-hidden scroll-mt-28">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section id="wall-of-love" className="py-28 sm:py-40 scroll-mt-28">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center mb-12"
+              className="text-center mb-16 sm:mb-20"
             >
-              <div className="flex items-center justify-center gap-2 mb-4">
+              <div className="flex items-center justify-center gap-2 mb-6">
                 {[...Array(5)].map((_, i) => (
-                  <DiamondStar key={i} className="w-5 h-5 text-[#D4AF37]" />
+                  <DiamondStar key={i} className="w-6 h-6 sm:w-7 sm:h-7 text-[#D4AF37]" />
                 ))}
               </div>
-              <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl text-[#3D2B1F] mb-4 tracking-wide">
+              <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl text-[#3D2B1F] mb-5 tracking-wide">
                 Our Sparkling Clients
               </h2>
-              <p className="text-[#3D2B1F]/60 text-lg">The Diamond Wall of Love</p>
-              <div className="flex items-center justify-center gap-4 mt-6">
-                <div className="w-12 h-px bg-[#3D2B1F]/30" />
-                <DiamondLogo className="w-5 h-5 text-[#3D2B1F]/40" />
-                <div className="w-12 h-px bg-[#3D2B1F]/30" />
+              <p className="text-[#3D2B1F]/60 text-lg sm:text-xl">The Diamond Wall of Love</p>
+              <div className="flex items-center justify-center gap-4 mt-8">
+                <div className="w-16 h-px bg-[#3D2B1F]/30" />
+                <DiamondLogo className="w-6 h-6 text-[#3D2B1F]/40" />
+                <div className="w-16 h-px bg-[#3D2B1F]/30" />
               </div>
             </motion.div>
-          </div>
 
-          {/* Horizontal Scrolling Gallery */}
-          <div 
-            className="flex gap-6 px-4 sm:px-6 pb-4 overflow-x-auto scrollbar-hide"
-            style={{ 
-              scrollSnapType: 'x mandatory',
-              WebkitOverflowScrolling: 'touch'
-            }}
-          >
-            {/* Spacer for centering on desktop */}
-            <div className="flex-shrink-0 w-4 sm:w-[calc((100vw-72rem)/2)]" />
-            
-            {reviews.map((review, index) => (
-              <motion.div
-                key={review.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="flex-shrink-0 w-72 sm:w-80"
-                style={{ scrollSnapAlign: 'start' }}
-              >
-                <div 
-                  className="h-full border border-[#3D2B1F]/20"
-                  style={{ 
-                    backgroundColor: '#F9F1F1',
-                    boxShadow: '0 4px 24px rgba(61, 43, 31, 0.08)'
-                  }}
+            {/* Grid Layout for Larger Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10">
+              {reviews.map((review, index) => (
+                <motion.div
+                  key={review.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
                 >
-                  {/* <!-- UPLOAD REVIEW IMAGE HERE --> */}
-                  {/* Square Product Photo */}
-                  <div className="aspect-square relative overflow-hidden" style={{ backgroundColor: 'rgba(61, 43, 31, 0.03)' }}>
-                    {review.image ? (
-                      <img 
-                        src={review.image} 
-                        alt={`${review.product} review`}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div 
-                        className="w-full h-full flex flex-col items-center justify-center"
-                        style={{
-                          background: 'linear-gradient(135deg, rgba(61, 43, 31, 0.06) 0%, rgba(61, 43, 31, 0.02) 100%)',
-                          backdropFilter: 'blur(8px)'
-                        }}
-                      >
-                        <DiamondLogo className="w-12 h-12 text-[#3D2B1F]/15 mb-2" />
-                        <span className="text-[#3D2B1F]/30 text-xs font-display tracking-[0.1em]">{review.product}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Review Content */}
-                  <div className="p-6">
-                    {/* 5-Star Diamond Rating */}
-                    <div className="flex items-center gap-1 mb-4">
-                      {[...Array(5)].map((_, i) => (
-                        <DiamondStar key={i} className="w-4 h-4 text-[#D4AF37]" />
-                      ))}
+                  <div 
+                    className="h-full border border-[#3D2B1F]/20 rounded-lg overflow-hidden"
+                    style={{ 
+                      backgroundColor: '#F9F1F1',
+                      boxShadow: '0 8px 32px rgba(61, 43, 31, 0.10)'
+                    }}
+                  >
+                    {/* Square Product Photo */}
+                    <div className="aspect-[4/3] relative overflow-hidden" style={{ backgroundColor: 'rgba(61, 43, 31, 0.03)' }}>
+                      {review.image ? (
+                        <img 
+                          src={review.image} 
+                          alt={`${review.product} review`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div 
+                          className="w-full h-full flex flex-col items-center justify-center"
+                          style={{
+                            background: 'linear-gradient(135deg, rgba(61, 43, 31, 0.06) 0%, rgba(61, 43, 31, 0.02) 100%)',
+                            backdropFilter: 'blur(8px)'
+                          }}
+                        >
+                          <DiamondLogo className="w-16 h-16 text-[#3D2B1F]/15 mb-3" />
+                          <span className="text-[#3D2B1F]/30 text-sm font-display tracking-[0.1em]">{review.product}</span>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Review Text */}
-                    <p className="text-[#3D2B1F]/80 text-sm sm:text-base leading-relaxed mb-4 italic">
-                      "{review.review}"
-                    </p>
+                    {/* Review Content */}
+                    <div className="p-6 sm:p-8">
+                      {/* 5-Star Diamond Rating */}
+                      <div className="flex items-center gap-1.5 mb-5">
+                        {[...Array(5)].map((_, i) => (
+                          <DiamondStar key={i} className="w-5 h-5 text-[#D4AF37]" />
+                        ))}
+                      </div>
 
-                    {/* Customer Name */}
-                    <p className="font-display text-[#3D2B1F] tracking-wide text-sm">
-                      — {review.name}
-                    </p>
+                      {/* Review Text */}
+                      <p className="text-[#3D2B1F]/80 text-base sm:text-lg leading-relaxed mb-5 italic">
+                        "{review.review}"
+                      </p>
+
+                      {/* Customer Name */}
+                      <p className="font-display text-[#3D2B1F] tracking-wide text-base">
+                        — {review.name}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
-
-            {/* Spacer for centering on desktop */}
-            <div className="flex-shrink-0 w-4 sm:w-[calc((100vw-72rem)/2)]" />
+                </motion.div>
+              ))}
+            </div>
           </div>
         </section>
 
