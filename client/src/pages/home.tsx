@@ -89,7 +89,7 @@ const products = [
     description: "Custom flavors crafted exclusively for you. Subject to approval.",
     isCustom: true,
     category: "custom",
-    image: ""
+    image: "/bespoke_creation.png"
   },
 ];
 
