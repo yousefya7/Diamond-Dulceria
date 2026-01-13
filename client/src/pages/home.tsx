@@ -160,6 +160,16 @@ export default function Home() {
     return [];
   });
   const [cartOpen, setCartOpen] = useState(false);
+  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
+  const [orderPlaced, setOrderPlaced] = useState(false);
+  const [checkoutForm, setCheckoutForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    notes: ''
+  });
+  
   const [customModalOpen, setCustomModalOpen] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [customForm, setCustomForm] = useState({ flavorIdea: '', eventDate: '', name: '', email: '' });
@@ -190,20 +200,16 @@ export default function Home() {
     setCartOpen(true);
   };
 
-  const handleCheckout = () => {
-    const orderDetails = cart.map(item => 
-      `• ${item.name} (x${item.quantity}) - $${item.price * item.quantity}`
-    ).join('\n');
-    
-    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    
-    const subject = encodeURIComponent("New Order Request - Diamond Dulceria");
-    const body = encodeURIComponent(
-      `Hello,\n\nI would like to place an order for the following items:\n\n${orderDetails}\n\nTotal Estimate: $${total}\n\nPlease let me know how to proceed with payment and delivery.\n\nThank you!`
-    );
-    
-    // Replace with your actual email address
-    window.location.href = `mailto:your-email@example.com?subject=${subject}&body=${body}`;
+  const handleCheckoutSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // In a real app, this would send data to a backend
+    setOrderPlaced(true);
+    setTimeout(() => {
+      setCheckoutModalOpen(false);
+      setOrderPlaced(false);
+      setCart([]); // Clear cart after order
+      setCheckoutForm({ name: '', email: '', phone: '', address: '', notes: '' });
+    }, 3000);
   };
 
   const updateQuantity = (id: string, delta: number) => {
@@ -834,7 +840,10 @@ export default function Home() {
                       <span className="font-display text-3xl text-[#F4C2C2]">${subtotal}</span>
                     </div>
                     <button
-                      onClick={handleCheckout}
+                      onClick={() => {
+                        setCartOpen(false);
+                        setCheckoutModalOpen(true);
+                      }}
                       className="w-full py-5 bg-[#F4C2C2] hover:bg-[#e8b0b0] text-[#3D2B1F] text-lg font-display tracking-[0.15em] rounded-full transition-all duration-300 active:scale-[0.98]"
                       data-testid="button-checkout"
                     >
@@ -844,6 +853,141 @@ export default function Home() {
                 )}
               </motion.div>
             </>
+          )}
+        </AnimatePresence>
+
+        {/* Checkout Modal */}
+        <AnimatePresence>
+          {checkoutModalOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-[#3D2B1F]/70 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
+              onClick={() => !orderPlaced && setCheckoutModalOpen(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="w-full max-w-lg overflow-hidden shadow-2xl rounded-lg max-h-[90vh] flex flex-col"
+                style={{ backgroundColor: '#F9F1F1' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="p-6 flex justify-between items-center flex-shrink-0" style={{ backgroundColor: '#3D2B1F' }}>
+                  <div className="flex items-center gap-3">
+                    <ShoppingBag className="w-5 h-5 text-[#D4AF37]" />
+                    <h3 className="font-display text-xl text-[#F4C2C2] tracking-wide">Secure Checkout</h3>
+                  </div>
+                  <button 
+                    onClick={() => setCheckoutModalOpen(false)}
+                    className="p-2 text-[#F4C2C2]/70 hover:text-[#F4C2C2] transition-colors"
+                    disabled={orderPlaced}
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                {orderPlaced ? (
+                  <div className="p-10 text-center flex flex-col items-center justify-center h-full">
+                    <div className="w-20 h-20 bg-[#D4AF37]/10 rounded-full flex items-center justify-center mb-6">
+                      <Sparkles className="w-10 h-10 text-[#D4AF37]" />
+                    </div>
+                    <h4 className="font-display text-2xl text-[#3D2B1F] mb-3 tracking-wide">Order Received!</h4>
+                    <p className="text-[#3D2B1F]/60 mb-6">
+                      Thank you for your order, {checkoutForm.name.split(' ')[0]}!<br/>
+                      We'll be in touch shortly to confirm delivery.
+                    </p>
+                    <div className="p-4 bg-[#3D2B1F]/5 rounded-lg border border-[#3D2B1F]/10">
+                      <p className="text-[#3D2B1F]/80 text-sm font-medium">Payment Due on Delivery: ${subtotal}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <form onSubmit={handleCheckoutSubmit} className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-5">
+                    <div className="bg-[#D4AF37]/10 p-4 rounded-lg border border-[#D4AF37]/20 flex items-start gap-3">
+                      <div className="mt-1"><Sparkles className="w-4 h-4 text-[#D4AF37]" /></div>
+                      <div>
+                        <h5 className="text-[#3D2B1F] font-display text-sm tracking-wide mb-1">Pay on Delivery</h5>
+                        <p className="text-[#3D2B1F]/70 text-xs">Payment will be collected upon delivery of your confections.</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">Full Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={checkoutForm.name}
+                        onChange={(e) => setCheckoutForm(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] rounded-lg"
+                        placeholder="Jane Doe"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      <div>
+                        <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">Phone Number</label>
+                        <input
+                          type="tel"
+                          required
+                          value={checkoutForm.phone}
+                          onChange={(e) => setCheckoutForm(prev => ({ ...prev, phone: e.target.value }))}
+                          className="w-full px-4 py-3 bg-white border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] rounded-lg"
+                          placeholder="(555) 123-4567"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">Email</label>
+                        <input
+                          type="email"
+                          required
+                          value={checkoutForm.email}
+                          onChange={(e) => setCheckoutForm(prev => ({ ...prev, email: e.target.value }))}
+                          className="w-full px-4 py-3 bg-white border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] rounded-lg"
+                          placeholder="jane@email.com"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">Delivery Address</label>
+                      <textarea
+                        required
+                        value={checkoutForm.address}
+                        onChange={(e) => setCheckoutForm(prev => ({ ...prev, address: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] resize-none rounded-lg"
+                        rows={3}
+                        placeholder="Enter your full delivery address..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">Special Instructions (Optional)</label>
+                      <textarea
+                        value={checkoutForm.notes}
+                        onChange={(e) => setCheckoutForm(prev => ({ ...prev, notes: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] resize-none rounded-lg"
+                        rows={2}
+                        placeholder="Gate code, delivery preferences, etc."
+                      />
+                    </div>
+
+                    <div className="pt-2">
+                      <div className="flex justify-between items-center mb-4 text-[#3D2B1F]">
+                        <span className="text-sm opacity-60">Order Total</span>
+                        <span className="font-display text-xl">${subtotal}</span>
+                      </div>
+                      <button
+                        type="submit"
+                        className="w-full py-4 bg-[#3D2B1F] hover:bg-[#2a1e15] text-[#F9F1F1] text-lg font-display tracking-[0.15em] rounded-full transition-all duration-300 active:scale-[0.98]"
+                      >
+                        CONFIRM ORDER
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </motion.div>
+            </motion.div>
           )}
         </AnimatePresence>
 
