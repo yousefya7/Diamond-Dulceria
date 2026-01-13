@@ -184,7 +184,7 @@ export default function Home() {
             </p>
             <a 
               href="#shop" 
-              className="inline-block px-10 py-5 sm:px-12 sm:py-6 bg-[#3D2B1F] hover:bg-[#2a1e15] text-[#F4C2C2] text-lg font-display tracking-[0.2em] transition-all duration-300 active:scale-95"
+              className="inline-block px-12 py-5 sm:px-16 sm:py-6 bg-[#3D2B1F] hover:bg-[#2a1e15] text-[#FFFDD0] text-lg font-display tracking-[0.2em] rounded-full transition-all duration-300 active:scale-95"
               data-testid="button-shop-now"
             >
               VIEW COLLECTION
@@ -215,14 +215,18 @@ export default function Home() {
                 key={product.id}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
+                whileHover={{ scale: 1.02 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className={`relative overflow-hidden transition-all duration-500 ${
+                className={`relative overflow-hidden transition-all duration-300 cursor-pointer ${
                   product.isCustom 
-                    ? 'border-2 border-dashed border-[#3D2B1F]/40' 
-                    : 'border border-[#3D2B1F]/10'
+                    ? 'border-2 border-dashed border-[#3D2B1F]/50' 
+                    : 'border border-[#3D2B1F]/30'
                 }`}
-                style={{ backgroundColor: 'rgba(244, 194, 194, 0.5)' }}
+                style={{ 
+                  backgroundColor: '#FFFDD0',
+                  boxShadow: '0 4px 20px rgba(61, 43, 31, 0.12)'
+                }}
                 data-testid={`product-${product.id}`}
               >
                 {/* Product Image */}
@@ -257,17 +261,17 @@ export default function Home() {
                   
                   <h3 className="font-display text-xl sm:text-2xl text-[#3D2B1F] mb-4 tracking-wide">{product.name}</h3>
                   
-                  {/* Glassmorphism description box */}
-                  <div className="glass-cocoa rounded-lg p-4 mb-6">
-                    <p className="text-[#F4C2C2]/90 text-sm sm:text-base leading-relaxed">{product.description}</p>
+                  {/* Description */}
+                  <div className="bg-[#3D2B1F]/5 rounded-lg p-4 mb-6 border border-[#3D2B1F]/10">
+                    <p className="text-[#3D2B1F]/70 text-sm sm:text-base leading-relaxed">{product.description}</p>
                   </div>
                   
                   <button
                     onClick={() => addToCart(product)}
-                    className={`w-full py-5 sm:py-6 text-base sm:text-lg font-display tracking-[0.15em] transition-all duration-300 flex items-center justify-center gap-3 active:scale-[0.98] ${
+                    className={`w-full py-5 sm:py-6 text-base sm:text-lg font-display tracking-[0.15em] transition-all duration-300 flex items-center justify-center gap-3 active:scale-[0.98] rounded-full ${
                       product.isCustom 
-                        ? 'bg-transparent border-2 border-[#3D2B1F] text-[#3D2B1F] hover:bg-[#3D2B1F] hover:text-[#F4C2C2]' 
-                        : 'bg-[#3D2B1F] text-[#F4C2C2] hover:bg-[#2a1e15]'
+                        ? 'bg-transparent border-2 border-[#3D2B1F] text-[#3D2B1F] hover:bg-[#3D2B1F] hover:text-[#FFFDD0]' 
+                        : 'bg-[#3D2B1F] text-[#FFFDD0] hover:bg-[#2a1e15]'
                     }`}
                     data-testid={`add-${product.id}`}
                   >
@@ -395,7 +399,7 @@ export default function Home() {
                     <span className="font-display text-3xl text-[#F4C2C2]">${subtotal}</span>
                   </div>
                   <button
-                    className="w-full py-5 bg-[#F4C2C2] hover:bg-[#e8b0b0] text-[#3D2B1F] text-lg font-display tracking-[0.15em] transition-all duration-300 active:scale-[0.98]"
+                    className="w-full py-5 bg-[#F4C2C2] hover:bg-[#e8b0b0] text-[#3D2B1F] text-lg font-display tracking-[0.15em] rounded-full transition-all duration-300 active:scale-[0.98]"
                     data-testid="button-checkout"
                   >
                     CHECKOUT
@@ -504,7 +508,7 @@ export default function Home() {
                   
                   <button
                     type="submit"
-                    className="w-full py-5 bg-[#3D2B1F] hover:bg-[#2a1e15] text-[#F4C2C2] text-lg font-display tracking-[0.15em] transition-all duration-300 flex items-center justify-center gap-3 active:scale-[0.98]"
+                    className="w-full py-5 bg-[#3D2B1F] hover:bg-[#2a1e15] text-[#FFFDD0] text-lg font-display tracking-[0.15em] rounded-full transition-all duration-300 flex items-center justify-center gap-3 active:scale-[0.98]"
                     data-testid="button-submit-request"
                   >
                     <Send className="w-5 h-5" />
