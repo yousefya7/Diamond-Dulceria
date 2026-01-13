@@ -18,7 +18,8 @@ const products = [
     description: "Pistachio cream & toasted kataifi filling wrapped in dark chocolate",
     isCustom: false,
     category: "truffle",
-    image: "/dubai_chocolate_1768272691835.jpg" // <!-- UPLOAD PRODUCT IMAGE HERE -->
+    image: "/dubai_chocolate_1768272691835.jpg", // <!-- UPLOAD PRODUCT IMAGE HERE -->
+    trending: true
   },
   { 
     id: "cookie-butter", 
@@ -250,6 +251,12 @@ export default function Home() {
     >
       {/* <!-- UPLOAD PRODUCT IMAGE HERE --> */}
       <div className="aspect-[4/3] relative overflow-hidden" style={{ backgroundColor: 'rgba(61, 43, 31, 0.02)' }}>
+        {/* Trending Badge */}
+        {'trending' in product && product.trending && (
+          <div className="absolute top-4 left-4 z-10 px-4 py-2 bg-[#D4AF37] text-white text-xs font-display tracking-[0.15em] uppercase rounded-full shadow-lg">
+            ✦ Trending
+          </div>
+        )}
         {product.image ? (
           <img 
             src={product.image} 
@@ -418,6 +425,56 @@ export default function Home() {
           </div>
         </motion.header>
 
+        {/* Shortcut Navigation Bar */}
+        <motion.nav
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5, delay: loading ? 0 : 2.3, ease: "easeOut" }}
+          className="sticky top-16 sm:top-20 z-30 border-b border-[#3D2B1F]/10"
+          style={{ backgroundColor: '#F4C2C2' }}
+        >
+          <div className="relative">
+            <div 
+              className="flex items-center gap-6 sm:gap-10 px-4 sm:px-6 py-3 overflow-x-auto scrollbar-hide"
+              style={{ scrollBehavior: 'smooth' }}
+            >
+              <a 
+                href="#truffles" 
+                onClick={(e) => { e.preventDefault(); document.getElementById('truffles')?.scrollIntoView({ behavior: 'smooth' }); }}
+                className="flex-shrink-0 font-display text-sm tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors whitespace-nowrap"
+              >
+                Truffles
+              </a>
+              <span className="text-[#3D2B1F]/30">|</span>
+              <a 
+                href="#cookies" 
+                onClick={(e) => { e.preventDefault(); document.getElementById('cookies')?.scrollIntoView({ behavior: 'smooth' }); }}
+                className="flex-shrink-0 font-display text-sm tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors whitespace-nowrap"
+              >
+                Cookies
+              </a>
+              <span className="text-[#3D2B1F]/30">|</span>
+              <a 
+                href="#wall-of-love" 
+                onClick={(e) => { e.preventDefault(); document.getElementById('wall-of-love')?.scrollIntoView({ behavior: 'smooth' }); }}
+                className="flex-shrink-0 font-display text-sm tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors whitespace-nowrap"
+              >
+                Wall of Love
+              </a>
+              <span className="text-[#3D2B1F]/30">|</span>
+              <a 
+                href="#bespoke" 
+                onClick={(e) => { e.preventDefault(); document.getElementById('bespoke')?.scrollIntoView({ behavior: 'smooth' }); }}
+                className="flex-shrink-0 font-display text-sm tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors whitespace-nowrap"
+              >
+                Bespoke
+              </a>
+            </div>
+            {/* Fade effect on right edge for mobile */}
+            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-[#F4C2C2] to-transparent pointer-events-none sm:hidden" />
+          </div>
+        </motion.nav>
+
         {/* Hero Section */}
         <section className="relative py-20 sm:py-32 px-4 overflow-hidden">
           <div className="absolute inset-0 opacity-30">
@@ -449,8 +506,15 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Section Separator */}
+        <div className="flex items-center justify-center px-8 sm:px-16">
+          <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
+          <DiamondLogo className="w-4 h-4 mx-4 text-[#3D2B1F]/40" />
+          <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
+        </div>
+
         {/* Truffle Collection */}
-        <section id="shop" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <section id="truffles" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 scroll-mt-28">
           <div className="max-w-6xl mx-auto">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
@@ -477,8 +541,15 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Section Separator */}
+        <div className="flex items-center justify-center px-8 sm:px-16">
+          <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
+          <DiamondLogo className="w-4 h-4 mx-4 text-[#3D2B1F]/40" />
+          <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
+        </div>
+
         {/* Cookie Collection */}
-        <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <section id="cookies" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 scroll-mt-28">
           <div className="max-w-6xl mx-auto">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
@@ -505,8 +576,15 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Section Separator */}
+        <div className="flex items-center justify-center px-8 sm:px-16">
+          <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
+          <DiamondLogo className="w-4 h-4 mx-4 text-[#3D2B1F]/40" />
+          <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
+        </div>
+
         {/* Bespoke Diamond Section */}
-        <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <section id="bespoke" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 scroll-mt-28">
           <div className="max-w-2xl mx-auto">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
@@ -527,8 +605,15 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Section Separator */}
+        <div className="flex items-center justify-center px-8 sm:px-16">
+          <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
+          <DiamondLogo className="w-4 h-4 mx-4 text-[#3D2B1F]/40" />
+          <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
+        </div>
+
         {/* Diamond Wall of Love - Reviews Section */}
-        <section className="py-16 sm:py-24 overflow-hidden">
+        <section id="wall-of-love" className="py-16 sm:py-24 overflow-hidden scroll-mt-28">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
