@@ -28,10 +28,11 @@ A luxury, mobile-first e-commerce website for Diamond Dulceria (Estd. 2025), a p
 - `OWNER_EMAIL` - Business owner email for order notifications (yousefasmar2005@gmail.com)
 
 ## Email Notifications
-The email notification system is built using nodemailer. Currently, order notifications are logged to the server console. To enable actual email delivery:
-1. The system is ready to send to the OWNER_EMAIL address
-2. SMTP credentials need to be configured for production email delivery
-3. All orders are visible in the `/admin` dashboard regardless of email setup
+The email notification system uses Resend for sending beautiful HTML emails:
+- Order notifications are sent to OWNER_EMAIL (yousefasmar2005@gmail.com)
+- Uses RESEND_API_KEY secret for authentication
+- Emails include order details, customer info, and delivery address
+- All orders are also visible in the `/admin` dashboard
 
 ## Recent Changes
 - Full-stack upgrade with PostgreSQL database
