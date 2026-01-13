@@ -18,7 +18,7 @@ const products = [
     description: "Pistachio cream & toasted kataifi filling wrapped in dark chocolate",
     isCustom: false,
     category: "truffle",
-    image: "/attached_assets/dubai_chocolate_1768272567233.HEIC" // <!-- UPLOAD PRODUCT IMAGE HERE -->
+    image: "/attached_assets/dubai_chocolate_1768272691835.jpg" // <!-- UPLOAD PRODUCT IMAGE HERE -->
   },
   { 
     id: "cookie-butter", 
@@ -58,7 +58,7 @@ const products = [
     description: "Deep red cocoa with white chocolate chips and cream cheese swirl",
     isCustom: false,
     category: "cookie",
-    image: "/attached_assets/red_velvet_1768272567232.HEIC" // <!-- UPLOAD PRODUCT IMAGE HERE -->
+    image: "/attached_assets/red_velvet_1768272691836.jpg" // <!-- UPLOAD PRODUCT IMAGE HERE -->
   },
   { 
     id: "snickerdoodle", 
