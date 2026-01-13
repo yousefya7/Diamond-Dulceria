@@ -455,19 +455,19 @@ export default function Home() {
               </a>
               <span className="text-[#3D2B1F]/30">|</span>
               <a 
-                href="#wall-of-love" 
-                onClick={(e) => { e.preventDefault(); document.getElementById('wall-of-love')?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="flex-shrink-0 font-display text-sm tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors whitespace-nowrap"
-              >
-                Wall of Love
-              </a>
-              <span className="text-[#3D2B1F]/30">|</span>
-              <a 
                 href="#bespoke" 
                 onClick={(e) => { e.preventDefault(); document.getElementById('bespoke')?.scrollIntoView({ behavior: 'smooth' }); }}
                 className="flex-shrink-0 font-display text-sm tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors whitespace-nowrap"
               >
                 Bespoke
+              </a>
+              <span className="text-[#3D2B1F]/30">|</span>
+              <a 
+                href="#wall-of-love" 
+                onClick={(e) => { e.preventDefault(); document.getElementById('wall-of-love')?.scrollIntoView({ behavior: 'smooth' }); }}
+                className="flex-shrink-0 font-display text-sm tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors whitespace-nowrap"
+              >
+                Wall of Love
               </a>
             </div>
             {/* Fade effect on right edge for mobile */}
