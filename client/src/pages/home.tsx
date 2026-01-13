@@ -200,16 +200,43 @@ export default function Home() {
     setCartOpen(true);
   };
 
-  const handleCheckoutSubmit = (e: React.FormEvent) => {
+  const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, this would send data to a backend
-    setOrderPlaced(true);
-    setTimeout(() => {
-      setCheckoutModalOpen(false);
-      setOrderPlaced(false);
-      setCart([]); // Clear cart after order
-      setCheckoutForm({ name: '', email: '', phone: '', address: '', notes: '' });
-    }, 3000);
+    
+    try {
+      const orderData = {
+        customerName: checkoutForm.name,
+        customerEmail: checkoutForm.email,
+        customerPhone: checkoutForm.phone,
+        deliveryAddress: checkoutForm.address,
+        specialInstructions: checkoutForm.notes || null,
+        items: cart,
+        total: subtotal,
+      };
+
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit order');
+      }
+
+      setOrderPlaced(true);
+      setTimeout(() => {
+        setCheckoutModalOpen(false);
+        setOrderPlaced(false);
+        setCart([]); // Clear cart after order
+        setCheckoutForm({ name: '', email: '', phone: '', address: '', notes: '' });
+      }, 3000);
+    } catch (error) {
+      console.error('Error submitting order:', error);
+      alert('Failed to submit order. Please try again.');
+    }
   };
 
   const updateQuantity = (id: string, delta: number) => {
