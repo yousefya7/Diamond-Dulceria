@@ -347,24 +347,11 @@ export default function Home() {
         
         <button
           onClick={() => addToCart(product)}
-          className={`w-full py-5 sm:py-6 text-base sm:text-lg font-display tracking-[0.15em] transition-all duration-300 flex items-center justify-center gap-3 active:scale-[0.98] rounded-full ${
-            product.isCustom 
-              ? 'bg-transparent border-2 border-[#3D2B1F] text-[#3D2B1F] hover:bg-[#3D2B1F] hover:text-[#F9F1F1]' 
-              : 'bg-[#3D2B1F] text-[#F9F1F1] hover:bg-[#2a1e15]'
-          }`}
+          className="w-full py-5 sm:py-6 text-base sm:text-lg font-display tracking-[0.15em] transition-all duration-300 flex items-center justify-center gap-3 active:scale-[0.98] rounded-full bg-[#3D2B1F] text-[#F9F1F1] hover:bg-[#2a1e15]"
           data-testid={`add-${product.id}`}
         >
-          {product.isCustom ? (
-            <>
-              <Send className="w-5 h-5" />
-              REQUEST QUOTE
-            </>
-          ) : (
-            <>
-              <Plus className="w-5 h-5" />
-              ADD TO CART
-            </>
-          )}
+          <Plus className="w-5 h-5" />
+          ADD TO CART
         </button>
       </div>
     </motion.div>
