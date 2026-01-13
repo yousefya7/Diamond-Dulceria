@@ -435,7 +435,7 @@ export default function Home() {
           className="sticky top-0 z-40 shadow-lg"
           style={{ backgroundColor: '#3D2B1F' }}
         >
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative px-0">
             <div className="flex items-center justify-center h-18 sm:h-24">
               {/* Centered Logo & Brand */}
               <div className="flex items-center gap-3">
@@ -446,15 +446,15 @@ export default function Home() {
                 </div>
               </div>
               
-              {/* Cart Button - Pinned to Right */}
+              {/* Cart Button - Pinned to Top Right Corner */}
               <button
                 onClick={() => setCartOpen(true)}
-                className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 p-3 sm:p-4 bg-[#F4C2C2] hover:bg-[#e8b0b0] text-[#3D2B1F] rounded-full transition-all duration-300 active:scale-95"
+                className="fixed right-0 top-0 z-50 p-4 sm:p-5 bg-[#F4C2C2] hover:bg-[#e8b0b0] text-[#3D2B1F] transition-all duration-300 active:scale-95"
                 data-testid="button-cart"
               >
-                <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6" />
+                <ShoppingBag className="w-6 h-6 sm:w-7 sm:h-7" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-6 h-6 bg-[#3D2B1F] text-[#F4C2C2] text-xs font-bold flex items-center justify-center rounded-full">
+                  <span className="absolute top-1 right-1 w-6 h-6 bg-[#3D2B1F] text-[#F4C2C2] text-xs font-bold flex items-center justify-center rounded-full">
                     {cartCount}
                   </span>
                 )}
@@ -473,37 +473,37 @@ export default function Home() {
         >
           <div className="relative">
             <div 
-              className="flex items-center gap-6 sm:gap-10 px-4 sm:px-6 py-3 overflow-x-auto scrollbar-hide"
+              className="flex items-center justify-center gap-8 sm:gap-12 px-4 sm:px-6 py-4 overflow-x-auto scrollbar-hide"
               style={{ scrollBehavior: 'smooth' }}
             >
               <a 
                 href="#truffles" 
                 onClick={(e) => { e.preventDefault(); document.getElementById('truffles')?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="flex-shrink-0 font-display text-sm tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors whitespace-nowrap"
+                className="flex-shrink-0 font-display text-base sm:text-lg tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors whitespace-nowrap"
               >
                 Truffles
               </a>
-              <span className="text-[#3D2B1F]/30">|</span>
+              <span className="text-[#3D2B1F]/30 text-lg">|</span>
               <a 
                 href="#cookies" 
                 onClick={(e) => { e.preventDefault(); document.getElementById('cookies')?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="flex-shrink-0 font-display text-sm tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors whitespace-nowrap"
+                className="flex-shrink-0 font-display text-base sm:text-lg tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors whitespace-nowrap"
               >
                 Cookies
               </a>
-              <span className="text-[#3D2B1F]/30">|</span>
+              <span className="text-[#3D2B1F]/30 text-lg">|</span>
               <a 
                 href="#bespoke" 
                 onClick={(e) => { e.preventDefault(); document.getElementById('bespoke')?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="flex-shrink-0 font-display text-sm tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors whitespace-nowrap"
+                className="flex-shrink-0 font-display text-base sm:text-lg tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors whitespace-nowrap"
               >
                 Bespoke
               </a>
-              <span className="text-[#3D2B1F]/30">|</span>
+              <span className="text-[#3D2B1F]/30 text-lg">|</span>
               <a 
                 href="#wall-of-love" 
                 onClick={(e) => { e.preventDefault(); document.getElementById('wall-of-love')?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="flex-shrink-0 font-display text-sm tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors whitespace-nowrap"
+                className="flex-shrink-0 font-display text-base sm:text-lg tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors whitespace-nowrap"
               >
                 Wall of Love
               </a>
