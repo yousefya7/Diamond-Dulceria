@@ -266,7 +266,7 @@ export default function Home() {
     // Add bespoke as a $0 item with custom notes
     const bespokeProduct = products.find(p => p.isCustom);
     if (bespokeProduct) {
-      const customNotes = `Dessert Type: ${customForm.dessertType}\nFlavor Request: ${customForm.flavorRequest}\nEvent Date: ${customForm.eventDate}`;
+      const customNotes = `Dessert Type: ${customForm.dessertType}\nFlavor Request: ${customForm.flavorRequest}${customForm.eventDate ? `\nEvent Date: ${customForm.eventDate}` : ''}`;
       addToCart(bespokeProduct, customNotes);
     }
     setFormSubmitted(true);
@@ -1169,11 +1169,10 @@ export default function Home() {
                     
                     <div>
                       <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">
-                        Event Date <span className="text-red-500">*</span>
+                        Event Date (Optional)
                       </label>
                       <input
                         type="date"
-                        required
                         value={customForm.eventDate}
                         onChange={(e) => setCustomForm(prev => ({ ...prev, eventDate: e.target.value }))}
                         className="w-full px-4 py-4 bg-white border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] text-lg rounded-lg"
