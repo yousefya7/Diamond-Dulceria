@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Plus, Minus, X, Instagram, Sparkles, Send } from "lucide-react";
+import { ShoppingBag, Plus, Minus, X, Instagram, Sparkles, Send, ImageIcon } from "lucide-react";
 
 type CartItem = {
   id: string;
@@ -16,7 +16,8 @@ const products = [
     price: 50, 
     batch: 25,
     description: "Fresh strawberry cream infused ganache with delicate shortcake crumble",
-    isCustom: false
+    isCustom: false,
+    image: "" // Add your image URL here
   },
   { 
     id: "cookies-cream", 
@@ -24,7 +25,8 @@ const products = [
     price: 50, 
     batch: 25,
     description: "Rich Oreo-infused white chocolate ganache with cookie dust finish",
-    isCustom: false
+    isCustom: false,
+    image: "" // Add your image URL here
   },
   { 
     id: "signature-cookies", 
@@ -32,7 +34,8 @@ const products = [
     price: 50, 
     batch: 25,
     description: "Our signature brown butter cookies with premium chocolate and sea salt",
-    isCustom: false
+    isCustom: false,
+    image: "" // Add your image URL here
   },
   { 
     id: "bespoke-creations", 
@@ -40,7 +43,8 @@ const products = [
     price: 0, 
     batch: 0,
     description: "Custom flavors crafted exclusively for you. Subject to approval.",
-    isCustom: true
+    isCustom: true,
+    image: "" // Add your image URL here
   },
 ];
 
@@ -221,7 +225,23 @@ export default function Home() {
                 style={{ backgroundColor: 'rgba(244, 194, 194, 0.5)' }}
                 data-testid={`product-${product.id}`}
               >
-                {/* Glassmorphism overlay for description */}
+                {/* Product Image */}
+                <div className="aspect-[4/3] bg-[#3D2B1F]/5 relative overflow-hidden">
+                  {product.image ? (
+                    <img 
+                      src={product.image} 
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-[#3D2B1F]/30">
+                      <ImageIcon className="w-12 h-12 mb-2" />
+                      <span className="text-sm tracking-wide">Product Image</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Product Details */}
                 <div className="p-6 sm:p-8">
                   {product.isCustom ? (
                     <div className="flex items-center gap-2 mb-4">
