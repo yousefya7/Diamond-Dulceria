@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Plus, Minus, X, Instagram, Sparkles, Send, Star } from "lucide-react";
+import { ShoppingBag, Plus, Minus, X, Instagram, Sparkles, Send, Star, ChevronDown } from "lucide-react";
 
 type CartItem = {
   id: string;
@@ -515,18 +515,98 @@ export default function Home() {
 
         {/* Hero Section - Full Screen */}
         <section className="relative min-h-[100vh] flex items-center justify-center px-4 overflow-hidden">
-          <div className="absolute inset-0 opacity-30">
+          {/* Subtle marble/parchment texture background */}
+          <div 
+            className="absolute inset-0 opacity-[0.04]"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%233D2B1F' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            }}
+          />
+          
+          {/* Soft gradient orbs */}
+          <div className="absolute inset-0 opacity-30 -z-10">
             <div className="absolute top-20 left-1/4 w-64 h-64 rounded-full bg-[#3D2B1F]/10 blur-3xl" />
             <div className="absolute bottom-20 right-1/4 w-80 h-80 rounded-full bg-[#3D2B1F]/10 blur-3xl" />
           </div>
           
-          <div className="relative max-w-4xl mx-auto text-center">
+          {/* Floating Decorative Elements - Hidden on Mobile */}
+          <div className="hidden sm:block absolute inset-0 -z-10 pointer-events-none overflow-hidden">
+            {/* Gold leaf flake - top left */}
+            <motion.div 
+              initial={{ opacity: 0, rotate: -15 }}
+              animate={{ opacity: 0.6, rotate: 0 }}
+              transition={{ duration: 1.5, delay: 2.8 }}
+              className="absolute top-[15%] left-[8%] text-[#D4AF37]/40"
+            >
+              <svg width="40" height="50" viewBox="0 0 40 50" fill="currentColor">
+                <path d="M20 0c5 10 15 15 20 25-5 10-15 15-20 25-5-10-15-15-20-25C5 15 15 10 20 0z"/>
+              </svg>
+            </motion.div>
+            
+            {/* Cocoa bean - top right */}
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 0.5, y: 0 }}
+              transition={{ duration: 1.2, delay: 3 }}
+              className="absolute top-[20%] right-[10%] text-[#3D2B1F]/25"
+            >
+              <svg width="35" height="50" viewBox="0 0 35 50" fill="currentColor">
+                <ellipse cx="17.5" cy="25" rx="14" ry="22" />
+                <path d="M17.5 5v40" stroke="currentColor" strokeWidth="2" fill="none" opacity="0.3"/>
+              </svg>
+            </motion.div>
+            
+            {/* Chocolate drizzle - bottom left */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.3 }}
+              transition={{ duration: 1, delay: 3.2 }}
+              className="absolute bottom-[25%] left-[5%] text-[#3D2B1F]/20"
+            >
+              <svg width="60" height="80" viewBox="0 0 60 80" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                <path d="M10 5 Q30 20, 20 40 Q10 60, 30 75"/>
+                <path d="M40 10 Q50 30, 45 50 Q40 70, 50 80"/>
+              </svg>
+            </motion.div>
+            
+            {/* Gold flake - bottom right */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 0.5, scale: 1 }}
+              transition={{ duration: 1.3, delay: 3.1 }}
+              className="absolute bottom-[18%] right-[12%] text-[#D4AF37]/30"
+            >
+              <svg width="30" height="35" viewBox="0 0 30 35" fill="currentColor">
+                <path d="M15 0c3 7 10 10 15 17.5-5 7.5-12 10.5-15 17.5-3-7-10-10-15-17.5C10 10 12 7 15 0z"/>
+              </svg>
+            </motion.div>
+            
+            {/* Small cocoa bean - mid left */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.35 }}
+              transition={{ duration: 1.5, delay: 3.3 }}
+              className="absolute top-[45%] left-[3%] text-[#3D2B1F]/20"
+            >
+              <svg width="25" height="35" viewBox="0 0 35 50" fill="currentColor">
+                <ellipse cx="17.5" cy="25" rx="12" ry="20" />
+              </svg>
+            </motion.div>
+          </div>
+          
+          <div className="relative max-w-4xl mx-auto text-center z-10">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: loading ? 0 : 2.4 }}
             >
-              <DiamondLogo className="w-16 h-16 sm:w-20 sm:h-20 text-[#3D2B1F] mx-auto mb-8" />
+              <DiamondLogo className="w-16 h-16 sm:w-20 sm:h-20 text-[#3D2B1F] mx-auto mb-6" />
+              
+              {/* Brand Tagline */}
+              <p className="text-[#D4AF37] text-sm sm:text-base tracking-[0.3em] uppercase mb-4 font-light italic">
+                The Art of the Sweet Treat
+              </p>
+              
               <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl text-[#3D2B1F] leading-tight mb-6 tracking-wide">
                 Artisan Confections
               </h2>
@@ -542,6 +622,23 @@ export default function Home() {
               </button>
             </motion.div>
           </div>
+          
+          {/* Scroll Indicator */}
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: loading ? 0.5 : 3 }}
+            className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer"
+            onClick={() => document.getElementById('truffles')?.scrollIntoView({ behavior: 'smooth' })}
+          >
+            <span className="text-[#3D2B1F]/50 text-xs tracking-[0.25em] uppercase font-display">Explore</span>
+            <motion.div
+              animate={{ y: [0, 8, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <ChevronDown className="w-5 h-5 text-[#3D2B1F]/50" />
+            </motion.div>
+          </motion.div>
         </section>
 
         {/* Section Separator */}
