@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const OWNER_EMAIL = process.env.OWNER_EMAIL || '';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'dymonlhf@gmail.com';
 
 type OrderItem = {
   id: string;
@@ -164,11 +164,6 @@ export async function sendCustomerConfirmation(order: OrderData): Promise<boolea
 
 // Send order notification to business owner
 export async function sendOrderNotification(order: OrderData): Promise<boolean> {
-  if (!OWNER_EMAIL) {
-    console.log('OWNER_EMAIL not set, skipping email notification');
-    return false;
-  }
-
   if (!process.env.RESEND_API_KEY) {
     console.log('Email skipped: API key not found');
     return false;
@@ -264,7 +259,7 @@ export async function sendOrderNotification(order: OrderData): Promise<boolean> 
   try {
     const { data, error } = await resend.emails.send({
       from: 'Orders <orders@diamonddulceria.com>',
-      to: OWNER_EMAIL,
+      to: ADMIN_EMAIL,
       subject: `💎 New Order from ${order.customerName} - $${order.total}`,
       html: htmlContent,
     });
