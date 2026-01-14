@@ -996,28 +996,17 @@ export default function Home() {
         </AnimatePresence>
 
         {/* Checkout Modal */}
-        <AnimatePresence>
-          {checkoutModalOpen && (
-            <motion.div
-              key="checkout-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-[#3D2B1F]/70 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
-              onClick={() => !orderPlaced && setCheckoutModalOpen(false)}
+        {checkoutModalOpen && (
+          <div
+            className="fixed inset-0 bg-[#3D2B1F]/70 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
+            onClick={() => !orderPlaced && setCheckoutModalOpen(false)}
+          >
+            <div
+              className="w-full max-w-lg overflow-hidden shadow-2xl rounded-lg max-h-[90vh] flex flex-col"
+              style={{ backgroundColor: '#F9F1F1' }}
+              onClick={(e) => e.stopPropagation()}
             >
-              <motion.div
-                key="checkout-modal"
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                transition={{ duration: 0.2 }}
-                className="w-full max-w-lg overflow-hidden shadow-2xl rounded-lg max-h-[90vh] flex flex-col"
-                style={{ backgroundColor: '#F9F1F1' }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="p-6 flex justify-between items-center flex-shrink-0" style={{ backgroundColor: '#3D2B1F' }}>
+              <div className="p-6 flex justify-between items-center flex-shrink-0" style={{ backgroundColor: '#3D2B1F' }}>
                   <div className="flex items-center gap-3">
                     <ShoppingBag className="w-5 h-5 text-[#D4AF37]" />
                     <h3 className="font-display text-xl text-[#F4C2C2] tracking-wide">Secure Checkout</h3>
@@ -1194,10 +1183,9 @@ export default function Home() {
                     </div>
                   </form>
                 )}
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          </div>
+        )}
 
         {/* Bespoke Diamond Modal */}
         <AnimatePresence>
