@@ -30,7 +30,7 @@ function hasCustomItems(items: OrderItem[]): boolean {
 // Send confirmation email to customer
 export async function sendCustomerConfirmation(order: OrderData): Promise<boolean> {
   if (!process.env.RESEND_API_KEY) {
-    console.log('RESEND_API_KEY not set, skipping customer confirmation email');
+    console.log('Email skipped: API key not found');
     return false;
   }
 
@@ -143,9 +143,9 @@ export async function sendCustomerConfirmation(order: OrderData): Promise<boolea
 
   try {
     const { data, error } = await resend.emails.send({
-      from: 'Diamond Dulceria <onboarding@resend.dev>',
+      from: 'Orders <orders@diamonddulceria.com>',
       to: order.customerEmail,
-      subject: `💎 Your Diamond Dulceria Order Confirmation - #${order.id.slice(0, 8).toUpperCase()}`,
+      subject: 'Thank you for your order! 🍫',
       html: htmlContent,
     });
 
@@ -170,7 +170,7 @@ export async function sendOrderNotification(order: OrderData): Promise<boolean> 
   }
 
   if (!process.env.RESEND_API_KEY) {
-    console.log('RESEND_API_KEY not set, skipping email notification');
+    console.log('Email skipped: API key not found');
     return false;
   }
 
@@ -263,7 +263,7 @@ export async function sendOrderNotification(order: OrderData): Promise<boolean> 
 
   try {
     const { data, error } = await resend.emails.send({
-      from: 'Diamond Dulceria <onboarding@resend.dev>',
+      from: 'Orders <orders@diamonddulceria.com>',
       to: OWNER_EMAIL,
       subject: `💎 New Order from ${order.customerName} - $${order.total}`,
       html: htmlContent,
