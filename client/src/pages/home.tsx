@@ -16,7 +16,7 @@ const products = [
     name: "Dubai Chocolate Truffles", 
     price: 50, 
     batch: 25,
-    description: "Pistachio cream & toasted kataifi filling wrapped in dark chocolate",
+    description: "A rich pistachio cream filling, coated in silky milk chocolate and topped with a pistachio crunch and drizzle.",
     isCustom: false,
     category: "truffle",
     image: "/dubai_chocolate.png", // <!-- UPLOAD PRODUCT IMAGE HERE -->
@@ -27,7 +27,7 @@ const products = [
     name: "Cookie Butter Truffles", 
     price: 50, 
     batch: 25,
-    description: "Speculoos spice center with silky white chocolate shell",
+    description: "Spiced cookie filling wrapped in smooth white chocolate, finished with Biscoff crumb topping.",
     isCustom: false,
     category: "truffle",
     image: "/cookie_butter.png" // <!-- UPLOAD PRODUCT IMAGE HERE -->
@@ -37,7 +37,7 @@ const products = [
     name: "Strawberry Shortcake Truffles", 
     price: 50, 
     batch: 25,
-    description: "Fresh strawberry cream infused ganache with delicate shortcake crumble",
+    description: "A rich strawberry-infused cheesecake filling enrobed in smooth pink white chocolate topped with a strawberry crumble.",
     isCustom: false,
     category: "truffle",
     image: "/strawberry_shortcake.png" // <!-- UPLOAD PRODUCT IMAGE HERE -->
@@ -47,7 +47,7 @@ const products = [
     name: "Cookies & Cream Truffles", 
     price: 50, 
     batch: 25,
-    description: "Rich Oreo-infused white chocolate ganache with cookie dust finish",
+    description: "Classic cookies & cream filling enrobed in milk chocolate, finished with a white chocolate drizzle and Oreo crumble.",
     isCustom: false,
     category: "truffle",
     image: "/cookies_cream.png" // <!-- UPLOAD PRODUCT IMAGE HERE -->
@@ -57,7 +57,7 @@ const products = [
     name: "Red Velvet Cookies", 
     price: 50, 
     batch: 25,
-    description: "Deep red cocoa with white chocolate chips and cream cheese swirl",
+    description: "Deep red cocoa base mixed with white chocolate chips, crushed Oreo cookies, and a smooth cream cheese swirl.",
     isCustom: false,
     category: "cookie",
     image: "/red_velvet.png" // <!-- UPLOAD PRODUCT IMAGE HERE -->
