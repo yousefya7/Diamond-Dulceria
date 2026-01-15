@@ -24,17 +24,17 @@ export async function registerRoutes(
     console.log("[ORDER] Received order request:", JSON.stringify(req.body, null, 2));
     
     try {
-      // Database health check before processing
-      console.log("[ORDER] Checking database connection...");
-      const dbHealthy = await checkDatabaseConnection();
+      // Pre-flight database check with retries (3 attempts, 1.5s delay)
+      console.log("[ORDER] Running pre-flight database check...");
+      const dbHealthy = await checkDatabaseConnection(3, 1500);
       if (!dbHealthy) {
-        console.error("[ORDER] Database connection failed");
+        console.error("[ORDER] Database pre-flight check failed after all retries");
         return res.status(503).json({ 
           success: false, 
-          error: "Database temporarily unavailable. Please try again in a moment." 
+          error: "Database connection issue. Please wait a moment and try again." 
         });
       }
-      console.log("[ORDER] Database connection OK");
+      console.log("[ORDER] Pre-flight check passed");
       
       // Validate input
       console.log("[ORDER] Validating order data...");
