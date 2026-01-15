@@ -3,16 +3,39 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertOrderSchema } from "@shared/schema";
 import { sendOrderNotification, sendCustomerConfirmation } from "./email";
+import { checkDatabaseConnection } from "./db";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Database health check endpoint
+  app.get("/api/health", async (req, res) => {
+    const dbHealthy = await checkDatabaseConnection();
+    if (dbHealthy) {
+      res.json({ status: "ok", database: "connected" });
+    } else {
+      res.status(503).json({ status: "error", database: "disconnected" });
+    }
+  });
+
   // Create order endpoint
   app.post("/api/orders", async (req, res) => {
     console.log("[ORDER] Received order request:", JSON.stringify(req.body, null, 2));
     
     try {
+      // Database health check before processing
+      console.log("[ORDER] Checking database connection...");
+      const dbHealthy = await checkDatabaseConnection();
+      if (!dbHealthy) {
+        console.error("[ORDER] Database connection failed");
+        return res.status(503).json({ 
+          success: false, 
+          error: "Database temporarily unavailable. Please try again in a moment." 
+        });
+      }
+      console.log("[ORDER] Database connection OK");
+      
       // Validate input
       console.log("[ORDER] Validating order data...");
       const validatedData = insertOrderSchema.parse(req.body);
@@ -48,12 +71,21 @@ export async function registerRoutes(
       
       res.status(201).json({ success: true, order });
     } catch (error: any) {
-      console.error("[ORDER] Error creating order:", error);
+      console.error("[ORDER] ========== FULL ERROR DUMP ==========");
+      console.error("[ORDER] Error message:", error?.message);
+      console.error("[ORDER] Error code:", error?.code);
+      console.error("[ORDER] Error name:", error?.name);
+      console.error("[ORDER] Error stack:", error?.stack);
+      console.error("[ORDER] Full error object:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+      console.error("[ORDER] =====================================");
+      
       const errorMessage = error?.message || "Unknown error";
       const errorDetails = error?.errors || error?.issues || null;
+      const errorCode = error?.code || null;
       res.status(400).json({ 
         success: false, 
         error: errorMessage,
+        code: errorCode,
         details: errorDetails
       });
     }
