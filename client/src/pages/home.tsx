@@ -230,10 +230,14 @@ export default function Home() {
         body: JSON.stringify(orderData),
       });
 
+      const data = await response.json();
+      
       if (!response.ok) {
-        throw new Error('Failed to submit order');
+        console.error('Order submission failed:', data);
+        throw new Error(data.error || 'Failed to submit order');
       }
 
+      console.log('Order submitted successfully:', data);
       setOrderPlaced(true);
       setTimeout(() => {
         setCheckoutModalOpen(false);
@@ -241,9 +245,9 @@ export default function Home() {
         setCart([]); // Clear cart after order
         setCheckoutForm({ name: '', email: '', phone: '', street: '', city: '', state: '', zip: '', notes: '' });
       }, 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting order:', error);
-      alert('Failed to submit order. Please try again.');
+      alert(`Failed to submit order: ${error.message || 'Please try again.'}`);
     }
   };
 

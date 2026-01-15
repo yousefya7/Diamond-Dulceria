@@ -10,9 +10,18 @@ export async function registerRoutes(
 ): Promise<Server> {
   // Create order endpoint
   app.post("/api/orders", async (req, res) => {
+    console.log("[ORDER] Received order request:", JSON.stringify(req.body, null, 2));
+    
     try {
+      // Validate input
+      console.log("[ORDER] Validating order data...");
       const validatedData = insertOrderSchema.parse(req.body);
+      console.log("[ORDER] Validation passed");
+      
+      // Save to database
+      console.log("[ORDER] Saving to database...");
       const order = await storage.createOrder(validatedData);
+      console.log("[ORDER] Order saved with ID:", order.id);
       
       const orderData = {
         id: order.id,
@@ -25,16 +34,28 @@ export async function registerRoutes(
         total: order.total,
       };
       
-      // Send both emails in parallel
-      await Promise.all([
-        sendOrderNotification(orderData),      // Email to business owner
-        sendCustomerConfirmation(orderData),   // Confirmation to customer
-      ]);
+      // Send emails (non-blocking - don't let email failures break order)
+      console.log("[ORDER] Sending emails...");
+      try {
+        await Promise.all([
+          sendOrderNotification(orderData),
+          sendCustomerConfirmation(orderData),
+        ]);
+        console.log("[ORDER] Emails sent successfully");
+      } catch (emailError) {
+        console.error("[ORDER] Email error (order still saved):", emailError);
+      }
       
       res.status(201).json({ success: true, order });
-    } catch (error) {
-      console.error("Error creating order:", error);
-      res.status(400).json({ success: false, error: "Failed to create order" });
+    } catch (error: any) {
+      console.error("[ORDER] Error creating order:", error);
+      const errorMessage = error?.message || "Unknown error";
+      const errorDetails = error?.errors || error?.issues || null;
+      res.status(400).json({ 
+        success: false, 
+        error: errorMessage,
+        details: errorDetails
+      });
     }
   });
 
