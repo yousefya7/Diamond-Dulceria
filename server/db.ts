@@ -100,3 +100,19 @@ export async function executeWithRetry<T>(
 
 export const db = drizzle(pool, { schema });
 export { pool };
+
+// Keep database warm - ping every 4 minutes to prevent idle timeout
+const KEEP_ALIVE_INTERVAL = 4 * 60 * 1000; // 4 minutes
+
+setInterval(async () => {
+  try {
+    const client = await pool.connect();
+    await client.query('SELECT 1');
+    client.release();
+    console.log('[DB] Keep-alive ping successful');
+  } catch (error: any) {
+    console.error('[DB] Keep-alive ping failed:', error.message);
+  }
+}, KEEP_ALIVE_INTERVAL);
+
+console.log('[DB] Keep-alive scheduled every 4 minutes');
