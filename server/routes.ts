@@ -24,14 +24,14 @@ export async function registerRoutes(
     console.log("[ORDER] Received order request:", JSON.stringify(req.body, null, 2));
     
     try {
-      // Pre-flight database check with retries (3 attempts, 1.5s delay)
+      // Pre-flight database check with retries (5 attempts, exponential backoff for cold start)
       console.log("[ORDER] Running pre-flight database check...");
-      const dbHealthy = await checkDatabaseConnection(3, 1500);
+      const dbHealthy = await checkDatabaseConnection(5, 2000);
       if (!dbHealthy) {
         console.error("[ORDER] Database pre-flight check failed after all retries");
         return res.status(503).json({ 
           success: false, 
-          error: "Database connection issue. Please wait a moment and try again." 
+          error: "Our system is warming up. Please try again in about 10 seconds." 
         });
       }
       console.log("[ORDER] Pre-flight check passed");

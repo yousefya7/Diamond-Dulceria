@@ -13,13 +13,13 @@ console.log("[DB] Initializing pool with DATABASE_URL...");
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
-  connectionTimeoutMillis: 15000,
-  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 30000,
+  idleTimeoutMillis: 60000,
   max: 10,
-  min: 2,
-  query_timeout: 15000,
+  min: 1,
+  query_timeout: 30000,
   keepAlive: true,
-  keepAliveInitialDelayMillis: 10000,
+  keepAliveInitialDelayMillis: 5000,
 });
 
 pool.on('error', (err) => {
@@ -34,7 +34,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-export async function checkDatabaseConnection(retries = 3, delayMs = 1500): Promise<boolean> {
+export async function checkDatabaseConnection(retries = 5, delayMs = 2000): Promise<boolean> {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       console.log(`[DB] Health check attempt ${attempt}/${retries}...`);
@@ -46,8 +46,9 @@ export async function checkDatabaseConnection(retries = 3, delayMs = 1500): Prom
     } catch (error: any) {
       console.error(`[DB] Health check attempt ${attempt} failed:`, error.message);
       if (attempt < retries) {
-        console.log(`[DB] Waiting ${delayMs}ms before retry...`);
-        await sleep(delayMs);
+        const waitTime = delayMs * attempt;
+        console.log(`[DB] Waiting ${waitTime}ms before retry (exponential backoff)...`);
+        await sleep(waitTime);
       }
     }
   }
@@ -58,8 +59,8 @@ export async function checkDatabaseConnection(retries = 3, delayMs = 1500): Prom
 export async function executeWithRetry<T>(
   operation: () => Promise<T>,
   operationName: string,
-  maxRetries = 3,
-  delayMs = 1000
+  maxRetries = 5,
+  delayMs = 2000
 ): Promise<T> {
   let lastError: any;
   
@@ -78,12 +79,15 @@ export async function executeWithRetry<T>(
         error.code === 'ENOTFOUND' ||
         error.code === 'EAI_AGAIN' ||
         error.code === 'ETIMEDOUT' ||
+        error.code === 'ECONNRESET' ||
         error.message?.includes('connection') ||
-        error.message?.includes('timeout');
+        error.message?.includes('timeout') ||
+        error.message?.includes('Connection terminated');
       
       if (isConnectionError && attempt < maxRetries) {
-        console.log(`[DB] Connection error detected, waiting ${delayMs}ms before retry...`);
-        await sleep(delayMs);
+        const waitTime = delayMs * attempt;
+        console.log(`[DB] Connection error detected, waiting ${waitTime}ms before retry (exponential backoff)...`);
+        await sleep(waitTime);
       } else if (!isConnectionError) {
         throw error;
       }
