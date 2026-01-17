@@ -90,7 +90,7 @@ const products = [
     description: "Fresh strawberries dipped in rich chocolate with elegant drizzle and toppings.",
     isCustom: false,
     category: "seasonal",
-    image: "/strawberry_shortcake.png"
+    image: "/strawberries.png"
   },
   { 
     id: "pink-chocolate-cookies", 
@@ -100,7 +100,7 @@ const products = [
     description: "Soft-baked cookies with pink white chocolate chips and a touch of strawberry.",
     isCustom: false,
     category: "seasonal",
-    image: "/red_velvet.png"
+    image: "/pink-cookies.png"
   },
   { 
     id: "strawberry-truffles", 
@@ -110,7 +110,7 @@ const products = [
     description: "Strawberry center with milk chocolate on the outside.",
     isCustom: false,
     category: "seasonal",
-    image: "/strawberry_shortcake.png"
+    image: "/strawberry-truffle.png"
   },
   { 
     id: "bespoke-diamond", 
@@ -527,6 +527,14 @@ export default function Home() {
               </a>
               <span className="text-[#3D2B1F]/30 text-[3vw] sm:text-lg">|</span>
               <a 
+                href="#seasonal" 
+                onClick={(e) => { e.preventDefault(); document.getElementById('seasonal')?.scrollIntoView({ behavior: 'smooth' }); }}
+                className="flex-shrink font-display text-[3.2vw] sm:text-lg tracking-[0.05em] sm:tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors text-center py-2 px-1 sm:px-3 rounded-lg hover:bg-[#3D2B1F]/5 active:bg-[#3D2B1F]/10"
+              >
+                Seasonal
+              </a>
+              <span className="text-[#3D2B1F]/30 text-[3vw] sm:text-lg">|</span>
+              <a 
                 href="#bespoke" 
                 onClick={(e) => { e.preventDefault(); document.getElementById('bespoke')?.scrollIntoView({ behavior: 'smooth' }); }}
                 className="flex-shrink font-display text-[3.2vw] sm:text-lg tracking-[0.05em] sm:tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors text-center py-2 px-1 sm:px-3 rounded-lg hover:bg-[#3D2B1F]/5 active:bg-[#3D2B1F]/10"
@@ -700,7 +708,7 @@ export default function Home() {
               </div>
             </motion.div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
               {truffles.map((product, index) => (
                 <ProductCard key={product.id} product={product} index={index} />
               ))}
