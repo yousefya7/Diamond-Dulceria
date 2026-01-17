@@ -90,7 +90,7 @@ const products = [
     description: "Fresh strawberries dipped in rich chocolate with elegant drizzle and toppings.",
     isCustom: false,
     category: "seasonal",
-    image: "/strawberries.png"
+    image: "/seasonal-strawberry.png"
   },
   { 
     id: "pink-chocolate-cookies", 
@@ -100,7 +100,7 @@ const products = [
     description: "Soft-baked cookies with pink white chocolate chips and a touch of strawberry.",
     isCustom: false,
     category: "seasonal",
-    image: "/pink-cookies.png"
+    image: "/seasonal-cookie.png"
   },
   { 
     id: "strawberry-truffles", 
@@ -110,7 +110,7 @@ const products = [
     description: "Strawberry center with milk chocolate on the outside.",
     isCustom: false,
     category: "seasonal",
-    image: "/strawberry-truffle.png"
+    image: "/seasonal-truffle.png"
   },
   { 
     id: "bespoke-diamond", 
@@ -795,26 +795,26 @@ export default function Home() {
         </div>
 
         {/* Bespoke Diamond Section - Ultra Compact */}
-        <section id="bespoke" className="py-8 sm:py-10 px-4 sm:px-6 lg:px-8 scroll-mt-28">
-          <div className="relative max-w-md mx-auto w-full">
+        <section id="bespoke" className="py-10 sm:py-12 px-4 sm:px-6 lg:px-8 scroll-mt-28">
+          <div className="relative max-w-lg mx-auto w-full">
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center mb-4"
+              className="text-center mb-5"
             >
-              <Sparkles className="w-5 h-5 text-[#D4AF37] mx-auto mb-2" />
-              <h2 className="font-display text-xl sm:text-2xl text-[#3D2B1F] mb-1 tracking-wide">
+              <Sparkles className="w-7 h-7 text-[#D4AF37] mx-auto mb-3" />
+              <h2 className="font-display text-2xl sm:text-3xl text-[#3D2B1F] mb-2 tracking-wide font-semibold">
                 Bespoke Creations
               </h2>
-              <p className="text-[#3D2B1F]/60 text-xs sm:text-sm">Custom flavors crafted just for you</p>
+              <p className="text-[#3D2B1F]/70 text-base sm:text-lg font-medium">Custom flavors crafted just for you</p>
             </motion.div>
 
-            <div className="bg-[#F9F1F1] border border-[#3D2B1F]/10 rounded-lg p-4 text-center">
-              <p className="text-[#3D2B1F]/70 text-sm mb-3">Have a unique flavor in mind? Subject to approval.</p>
+            <div className="bg-[#F9F1F1] border border-[#3D2B1F]/15 rounded-xl p-6 text-center shadow-sm">
+              <p className="text-[#3D2B1F]/80 text-base sm:text-lg mb-4 font-medium">Have a unique flavor in mind? Subject to approval.</p>
               <button
                 onClick={() => addToCart(custom[0])}
-                className="px-6 py-2 text-sm font-display tracking-[0.1em] bg-[#3D2B1F] text-[#F9F1F1] rounded-full hover:bg-[#2a1e15] transition-all"
+                className="px-8 py-3 text-base font-display tracking-[0.12em] bg-[#3D2B1F] text-[#F9F1F1] rounded-full hover:bg-[#2a1e15] transition-all font-semibold"
                 data-testid="add-bespoke-diamond"
               >
                 CUSTOM ORDER
