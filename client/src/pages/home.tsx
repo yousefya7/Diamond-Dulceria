@@ -322,7 +322,7 @@ export default function Home() {
       whileHover={{ scale: 1.02 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay: index * 0.1 }}
-      className={`relative overflow-hidden transition-all duration-300 cursor-pointer ${
+      className={`relative overflow-hidden transition-all duration-300 cursor-pointer h-full flex flex-col ${
         product.isCustom 
           ? 'border-2 border-dashed border-[#3D2B1F]/50' 
           : 'border border-[#3D2B1F]/25'
@@ -333,9 +333,7 @@ export default function Home() {
       }}
       data-testid={`product-${product.id}`}
     >
-      {/* <!-- UPLOAD PRODUCT IMAGE HERE --> */}
-      <div className="aspect-[4/3] relative overflow-hidden" style={{ backgroundColor: 'rgba(61, 43, 31, 0.02)' }}>
-        {/* Trending Badge */}
+      <div className="aspect-[4/3] relative overflow-hidden flex-shrink-0" style={{ backgroundColor: 'rgba(61, 43, 31, 0.02)' }}>
         {'trending' in product && product.trending && (
           <div className="absolute top-4 left-4 z-10 px-4 py-2 bg-[#D4AF37] text-white text-xs font-display tracking-[0.15em] uppercase rounded-full shadow-lg">
             ✦ Trending
@@ -346,6 +344,9 @@ export default function Home() {
             src={product.image} 
             alt={product.name}
             className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
           />
         ) : (
           <div 
@@ -361,7 +362,7 @@ export default function Home() {
         )}
       </div>
 
-      <div className="p-6 sm:p-8">
+      <div className="p-6 sm:p-8 flex flex-col flex-grow">
         {product.isCustom ? (
           <div className="flex items-center gap-2 mb-4">
             <Sparkles className="w-5 h-5 text-[#3D2B1F]" />
@@ -376,13 +377,13 @@ export default function Home() {
         
         <h3 className="font-display text-xl sm:text-2xl text-[#3D2B1F] mb-4 tracking-wide">{product.name}</h3>
         
-        <div className="bg-[#3D2B1F]/5 rounded-lg p-4 mb-6 border border-[#3D2B1F]/10">
+        <div className="bg-[#3D2B1F]/5 rounded-lg p-4 mb-6 border border-[#3D2B1F]/10 flex-grow">
           <p className="text-[#3D2B1F]/70 text-sm sm:text-base leading-relaxed">{product.description}</p>
         </div>
         
         <button
           onClick={() => addToCart(product)}
-          className="w-full py-5 sm:py-6 text-base sm:text-lg font-display tracking-[0.15em] transition-all duration-300 flex items-center justify-center gap-3 active:scale-[0.98] rounded-full bg-[#3D2B1F] text-[#F9F1F1] hover:bg-[#2a1e15]"
+          className="w-full py-5 sm:py-6 text-base sm:text-lg font-display tracking-[0.15em] transition-all duration-300 flex items-center justify-center gap-3 active:scale-[0.98] rounded-full bg-[#3D2B1F] text-[#F9F1F1] hover:bg-[#2a1e15] mt-auto"
           data-testid={`add-${product.id}`}
         >
           <Plus className="w-5 h-5" />
