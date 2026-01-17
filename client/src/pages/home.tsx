@@ -793,27 +793,32 @@ export default function Home() {
           <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
         </div>
 
-        {/* Bespoke Diamond Section - Compact */}
-        <section id="bespoke" className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 scroll-mt-28 relative overflow-hidden">
-          <div className="relative max-w-xl mx-auto w-full">
+        {/* Bespoke Diamond Section - Ultra Compact */}
+        <section id="bespoke" className="py-8 sm:py-10 px-4 sm:px-6 lg:px-8 scroll-mt-28">
+          <div className="relative max-w-md mx-auto w-full">
             <motion.div 
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center mb-6"
+              className="text-center mb-4"
             >
-              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-[#3D2B1F]/5 border border-[#D4AF37]/30 mb-3">
-                <Sparkles className="w-5 h-5 text-[#D4AF37]" />
-              </div>
-              <h2 className="font-display text-2xl sm:text-3xl text-[#3D2B1F] mb-2 tracking-wide">
+              <Sparkles className="w-5 h-5 text-[#D4AF37] mx-auto mb-2" />
+              <h2 className="font-display text-xl sm:text-2xl text-[#3D2B1F] mb-1 tracking-wide">
                 Bespoke Creations
               </h2>
-              <p className="text-[#3D2B1F]/60 text-sm sm:text-base max-w-sm mx-auto">Have a unique flavor in mind? Let us craft something extraordinary just for you.</p>
+              <p className="text-[#3D2B1F]/60 text-xs sm:text-sm">Custom flavors crafted just for you</p>
             </motion.div>
 
-            {custom.map((product, index) => (
-              <ProductCard key={product.id} product={product} index={index} />
-            ))}
+            <div className="bg-[#F9F1F1] border border-[#3D2B1F]/10 rounded-lg p-4 text-center">
+              <p className="text-[#3D2B1F]/70 text-sm mb-3">Have a unique flavor in mind? Subject to approval.</p>
+              <button
+                onClick={() => addToCart(custom[0])}
+                className="px-6 py-2 text-sm font-display tracking-[0.1em] bg-[#3D2B1F] text-[#F9F1F1] rounded-full hover:bg-[#2a1e15] transition-all"
+                data-testid="add-bespoke-diamond"
+              >
+                CUSTOM ORDER
+              </button>
+            </div>
           </div>
         </section>
 
