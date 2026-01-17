@@ -90,7 +90,7 @@ const products = [
     description: "Fresh strawberries dipped in rich chocolate with elegant drizzle and toppings.",
     isCustom: false,
     category: "seasonal",
-    image: "/seasonal-strawberry.png",
+    image: "/strawberries.jpg",
     trending: true
   },
   { 
@@ -101,7 +101,7 @@ const products = [
     description: "Soft-baked cookies with pink white chocolate chips and a touch of strawberry.",
     isCustom: false,
     category: "seasonal",
-    image: "/seasonal-cookie.png",
+    image: "/pink-cookies.jpg",
     trending: true
   },
   { 
@@ -112,7 +112,7 @@ const products = [
     description: "Strawberry center with milk chocolate on the outside.",
     isCustom: false,
     category: "seasonal",
-    image: "/seasonal-truffle.png",
+    image: "/strawberry-truffle.jpg",
     trending: true
   },
   { 
