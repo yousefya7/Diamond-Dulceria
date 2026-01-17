@@ -19,7 +19,7 @@ const products = [
     description: "A rich pistachio cream filling, coated in silky milk chocolate and topped with a pistachio crunch and drizzle.",
     isCustom: false,
     category: "truffle",
-    image: "/dubai_chocolate.png", // <!-- UPLOAD PRODUCT IMAGE HERE -->
+    image: "/dubai_chocolate.png",
     trending: true
   },
   { 
@@ -30,7 +30,7 @@ const products = [
     description: "Spiced cookie filling wrapped in smooth white chocolate, finished with Biscoff crumb topping.",
     isCustom: false,
     category: "truffle",
-    image: "/cookie_butter.png" // <!-- UPLOAD PRODUCT IMAGE HERE -->
+    image: "/cookie_butter.png"
   },
   { 
     id: "strawberry-shortcake", 
@@ -40,7 +40,7 @@ const products = [
     description: "A rich strawberry-infused cheesecake filling enrobed in smooth pink white chocolate topped with a strawberry crumble.",
     isCustom: false,
     category: "truffle",
-    image: "/strawberry_shortcake.png" // <!-- UPLOAD PRODUCT IMAGE HERE -->
+    image: "/strawberry_shortcake.png"
   },
   { 
     id: "cookies-cream", 
@@ -50,7 +50,7 @@ const products = [
     description: "Classic cookies & cream filling enrobed in milk chocolate, finished with a white chocolate drizzle and Oreo crumble.",
     isCustom: false,
     category: "truffle",
-    image: "/cookies_cream.png" // <!-- UPLOAD PRODUCT IMAGE HERE -->
+    image: "/cookies_cream.png"
   },
   { 
     id: "red-velvet", 
@@ -60,7 +60,7 @@ const products = [
     description: "Deep red cocoa base mixed with white chocolate chips, crushed Oreo cookies, and a smooth cream cheese swirl.",
     isCustom: false,
     category: "cookie",
-    image: "/red_velvet.png" // <!-- UPLOAD PRODUCT IMAGE HERE -->
+    image: "/red_velvet.png"
   },
   { 
     id: "snickerdoodle", 
@@ -70,7 +70,7 @@ const products = [
     description: "Classic cinnamon-sugar dusting with soft, chewy center",
     isCustom: false,
     category: "cookie",
-    image: "/snickerdoodle.png" // <!-- UPLOAD PRODUCT IMAGE HERE -->
+    image: "/snickerdoodle.png"
   },
   { 
     id: "signature-cookies", 
@@ -80,7 +80,37 @@ const products = [
     description: "Our signature brown butter cookies with premium chocolate and sea salt",
     isCustom: false,
     category: "cookie",
-    image: "/signature_cookies.png" // <!-- UPLOAD PRODUCT IMAGE HERE -->
+    image: "/signature_cookies.png"
+  },
+  { 
+    id: "chocolate-strawberries", 
+    name: "Chocolate Covered Strawberries", 
+    price: 50, 
+    batch: 12,
+    description: "Fresh strawberries dipped in rich chocolate with elegant drizzle and toppings.",
+    isCustom: false,
+    category: "seasonal",
+    image: "/strawberry_shortcake.png"
+  },
+  { 
+    id: "pink-chocolate-cookies", 
+    name: "Pink Chocolate Cookies", 
+    price: 50, 
+    batch: 25,
+    description: "Soft-baked cookies with pink white chocolate chips and a touch of strawberry.",
+    isCustom: false,
+    category: "seasonal",
+    image: "/red_velvet.png"
+  },
+  { 
+    id: "strawberry-truffles", 
+    name: "Strawberry Truffles", 
+    price: 50, 
+    batch: 25,
+    description: "Strawberry center with milk chocolate on the outside.",
+    isCustom: false,
+    category: "seasonal",
+    image: "/strawberry_shortcake.png"
   },
   { 
     id: "bespoke-diamond", 
@@ -96,6 +126,7 @@ const products = [
 
 const truffles = products.filter(p => p.category === "truffle");
 const cookies = products.filter(p => p.category === "cookie");
+const seasonal = products.filter(p => p.category === "seasonal");
 const custom = products.filter(p => p.category === "custom");
 
 const reviews = [
@@ -661,7 +692,7 @@ export default function Home() {
               <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl text-[#3D2B1F] mb-5 tracking-wide">
                 Truffle Collection
               </h2>
-              <p className="text-[#3D2B1F]/60 text-lg sm:text-xl max-w-xl mx-auto">Luxurious ganache centers, handcrafted to order</p>
+              <p className="text-[#3D2B1F]/60 text-lg sm:text-xl max-w-xl mx-auto">Luxurious filled center, handcrafted to order</p>
               <div className="flex items-center justify-center gap-4 mt-8">
                 <div className="w-16 h-px bg-[#3D2B1F]/30" />
                 <DiamondLogo className="w-6 h-6 text-[#3D2B1F]/40" />
@@ -669,7 +700,7 @@ export default function Home() {
               </div>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
               {truffles.map((product, index) => (
                 <ProductCard key={product.id} product={product} index={index} />
               ))}
@@ -704,7 +735,7 @@ export default function Home() {
               </div>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-10">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
               {cookies.map((product, index) => (
                 <ProductCard key={product.id} product={product} index={index} />
               ))}
@@ -719,33 +750,57 @@ export default function Home() {
           <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
         </div>
 
-        {/* Bespoke Diamond Section - Compact Full Screen */}
-        <section id="bespoke" className="min-h-[100vh] flex flex-col justify-center py-12 sm:py-16 px-4 sm:px-6 lg:px-8 scroll-mt-28 relative overflow-hidden">
-          {/* Premium background pattern */}
-          <div className="absolute inset-0 opacity-40">
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-[#D4AF37]/10 blur-3xl" />
-            <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-[#3D2B1F]/5 blur-3xl" />
-          </div>
-          
-          <div className="relative max-w-2xl mx-auto w-full">
+        {/* Seasonal Section */}
+        <section id="seasonal" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 scroll-mt-28">
+          <div className="max-w-6xl mx-auto">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center mb-8 sm:mb-10"
+              className="text-center mb-12 sm:mb-16"
             >
-              <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-[#3D2B1F]/5 border border-[#D4AF37]/30 mb-4">
-                <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-[#D4AF37]" />
+              <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl text-[#3D2B1F] mb-5 tracking-wide">
+                Seasonal
+              </h2>
+              <p className="text-[#3D2B1F]/60 text-lg sm:text-xl max-w-xl mx-auto">Limited-time treats for the season</p>
+              <div className="flex items-center justify-center gap-4 mt-8">
+                <div className="w-16 h-px bg-[#3D2B1F]/30" />
+                <DiamondLogo className="w-6 h-6 text-[#3D2B1F]/40" />
+                <div className="w-16 h-px bg-[#3D2B1F]/30" />
               </div>
-              <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl text-[#3D2B1F] mb-3 tracking-wide">
+            </motion.div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+              {seasonal.map((product, index) => (
+                <ProductCard key={product.id} product={product} index={index} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Section Separator */}
+        <div className="flex items-center justify-center px-8 sm:px-16">
+          <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
+          <DiamondLogo className="w-4 h-4 mx-4 text-[#3D2B1F]/40" />
+          <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
+        </div>
+
+        {/* Bespoke Diamond Section - Compact */}
+        <section id="bespoke" className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 scroll-mt-28 relative overflow-hidden">
+          <div className="relative max-w-xl mx-auto w-full">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-6"
+            >
+              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-[#3D2B1F]/5 border border-[#D4AF37]/30 mb-3">
+                <Sparkles className="w-5 h-5 text-[#D4AF37]" />
+              </div>
+              <h2 className="font-display text-2xl sm:text-3xl text-[#3D2B1F] mb-2 tracking-wide">
                 Bespoke Creations
               </h2>
-              <p className="text-[#3D2B1F]/60 text-base sm:text-lg max-w-md mx-auto">Have a unique flavor in mind? Let us craft something extraordinary just for you.</p>
-              <div className="flex items-center justify-center gap-4 mt-4">
-                <div className="w-12 h-px bg-[#D4AF37]/50" />
-                <DiamondLogo className="w-5 h-5 text-[#D4AF37]/60" />
-                <div className="w-12 h-px bg-[#D4AF37]/50" />
-              </div>
+              <p className="text-[#3D2B1F]/60 text-sm sm:text-base max-w-sm mx-auto">Have a unique flavor in mind? Let us craft something extraordinary just for you.</p>
             </motion.div>
 
             {custom.map((product, index) => (
