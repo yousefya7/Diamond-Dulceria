@@ -90,7 +90,8 @@ const products = [
     description: "Fresh strawberries dipped in rich chocolate with elegant drizzle and toppings.",
     isCustom: false,
     category: "seasonal",
-    image: "/seasonal-strawberry.png"
+    image: "/seasonal-strawberry.png",
+    trending: true
   },
   { 
     id: "pink-chocolate-cookies", 
@@ -100,7 +101,8 @@ const products = [
     description: "Soft-baked cookies with pink white chocolate chips and a touch of strawberry.",
     isCustom: false,
     category: "seasonal",
-    image: "/seasonal-cookie.png"
+    image: "/seasonal-cookie.png",
+    trending: true
   },
   { 
     id: "strawberry-truffles", 
@@ -110,7 +112,8 @@ const products = [
     description: "Strawberry center with milk chocolate on the outside.",
     isCustom: false,
     category: "seasonal",
-    image: "/seasonal-truffle.png"
+    image: "/seasonal-truffle.png",
+    trending: true
   },
   { 
     id: "bespoke-diamond", 
@@ -855,8 +858,8 @@ export default function Home() {
               </div>
             </motion.div>
 
-            {/* Grid Layout for Larger Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10">
+            {/* Grid Layout matching product rows */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
               {reviews.map((review, index) => (
                 <motion.div
                   key={review.id}
@@ -864,16 +867,17 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="h-full flex flex-col"
                 >
                   <div 
-                    className="h-full border border-[#3D2B1F]/20 rounded-lg overflow-hidden"
+                    className="h-full flex flex-col border border-[#3D2B1F]/20 rounded-lg overflow-hidden"
                     style={{ 
                       backgroundColor: '#F9F1F1',
                       boxShadow: '0 8px 32px rgba(61, 43, 31, 0.10)'
                     }}
                   >
                     {/* Square Product Photo */}
-                    <div className="aspect-[4/3] relative overflow-hidden" style={{ backgroundColor: 'rgba(61, 43, 31, 0.03)' }}>
+                    <div className="aspect-[4/3] relative overflow-hidden flex-shrink-0" style={{ backgroundColor: 'rgba(61, 43, 31, 0.03)' }}>
                       {review.image ? (
                         <img 
                           src={review.image} 
@@ -888,28 +892,28 @@ export default function Home() {
                             backdropFilter: 'blur(8px)'
                           }}
                         >
-                          <DiamondLogo className="w-16 h-16 text-[#3D2B1F]/15 mb-3" />
-                          <span className="text-[#3D2B1F]/30 text-sm font-display tracking-[0.1em]">{review.product}</span>
+                          <DiamondLogo className="w-10 h-10 text-[#3D2B1F]/15 mb-2" />
+                          <span className="text-[#3D2B1F]/30 text-xs font-display tracking-[0.1em] text-center px-2">{review.product}</span>
                         </div>
                       )}
                     </div>
 
                     {/* Review Content */}
-                    <div className="p-6 sm:p-8">
+                    <div className="p-4 sm:p-6 flex flex-col flex-grow">
                       {/* 5-Star Diamond Rating */}
-                      <div className="flex items-center gap-1.5 mb-5">
+                      <div className="flex items-center gap-1 mb-3">
                         {[...Array(5)].map((_, i) => (
-                          <DiamondStar key={i} className="w-5 h-5 text-[#D4AF37]" />
+                          <DiamondStar key={i} className="w-4 h-4 text-[#D4AF37]" />
                         ))}
                       </div>
 
                       {/* Review Text */}
-                      <p className="text-[#3D2B1F]/80 text-base sm:text-lg leading-relaxed mb-5 italic">
+                      <p className="text-[#3D2B1F]/80 text-sm sm:text-base leading-relaxed mb-3 italic flex-grow">
                         "{review.review}"
                       </p>
 
                       {/* Customer Name */}
-                      <p className="font-display text-[#3D2B1F] tracking-wide text-base">
+                      <p className="font-display text-[#3D2B1F] tracking-wide text-sm mt-auto">
                         — {review.name}
                       </p>
                     </div>
