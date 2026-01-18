@@ -4,7 +4,7 @@ import {
   Package, Clock, CheckCircle, RefreshCw, ArrowLeft, Phone, Mail, 
   MapPin, FileText, DollarSign, X, Send, Edit, Trash2, Plus,
   TrendingUp, Calendar, MessageSquare, Settings, Search, Bell,
-  BarChart3, PieChart, Activity
+  BarChart3, PieChart, Activity, Users, Sparkles, Check, XCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -145,7 +145,7 @@ function LoginForm({ onLogin }: { onLogin: (token: string, admin: any) => void }
 export default function Dashboard() {
   const [token, setToken] = useState<string | null>(null);
   const [admin, setAdmin] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "orders" | "products" | "analytics">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "orders" | "products" | "analytics" | "contacts" | "custom">("overview");
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -411,6 +411,8 @@ export default function Dashboard() {
           {[
             { id: 'overview', label: 'Overview', icon: TrendingUp },
             { id: 'orders', label: 'Orders', icon: Package },
+            { id: 'custom', label: 'Custom', icon: Sparkles },
+            { id: 'contacts', label: 'Contacts', icon: Users },
             { id: 'products', label: 'Products', icon: Settings },
             { id: 'analytics', label: 'Analytics', icon: BarChart3 },
           ].map(tab => (
@@ -705,6 +707,23 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+        )}
+
+        {activeTab === 'custom' && (
+          <CustomOrdersSection 
+            orders={orders.filter(o => o.items.some(i => i.customNotes))}
+            token={token}
+            onRefresh={() => fetchData(false)}
+            onSelectOrder={(order) => { setSelectedOrder(order); setShowOrderModal(true); }}
+          />
+        )}
+
+        {activeTab === 'contacts' && (
+          <ContactsSection 
+            orders={orders}
+            token={token}
+            onSelectOrder={(order) => { setSelectedOrder(order); setShowOrderModal(true); }}
+          />
         )}
       </div>
 
@@ -1304,5 +1323,453 @@ function ProductModal({ product, token, onClose, onSuccess }: {
         </div>
       </motion.div>
     </motion.div>
+  );
+}
+
+function CustomOrdersSection({ orders, token, onRefresh, onSelectOrder }: {
+  orders: Order[];
+  token: string;
+  onRefresh: () => void;
+  onSelectOrder: (order: Order) => void;
+}) {
+  const [approvingOrder, setApprovingOrder] = useState<string | null>(null);
+  const [quotePrice, setQuotePrice] = useState<Record<string, string>>({});
+  const [declineMessage, setDeclineMessage] = useState("");
+  const [showDeclineModal, setShowDeclineModal] = useState<Order | null>(null);
+  const { toast } = useToast();
+
+  const approveOrder = async (order: Order) => {
+    const price = quotePrice[order.id];
+    if (!price) {
+      toast({ title: "Enter a price", variant: "destructive" });
+      return;
+    }
+    setApprovingOrder(order.id);
+    try {
+      const res = await fetch(`/api/admin/orders/${order.id}/quote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ 
+          quotedPrice: Math.round(parseFloat(price) * 100), 
+          message: `Your custom order has been approved! The total cost is $${price}. We'll begin preparing your order once payment is received.`,
+          approved: true
+        }),
+      });
+      if (res.ok) {
+        toast({ title: "Order Approved!", description: `Quote of $${price} sent to customer` });
+        onRefresh();
+      }
+    } catch {
+      toast({ title: "Error", variant: "destructive" });
+    }
+    setApprovingOrder(null);
+  };
+
+  const declineOrder = async () => {
+    if (!showDeclineModal) return;
+    try {
+      await fetch(`/api/admin/orders/${showDeclineModal.id}/contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ 
+          subject: "Update on Your Custom Order - Diamond Dulceria",
+          message: declineMessage || "Unfortunately, we are unable to fulfill your custom order request at this time. Please feel free to contact us to discuss alternatives."
+        }),
+      });
+      await fetch(`/api/admin/orders/${showDeclineModal.id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status: "cancelled" }),
+      });
+      toast({ title: "Order Declined", description: "Customer has been notified" });
+      onRefresh();
+      setShowDeclineModal(null);
+      setDeclineMessage("");
+    } catch {
+      toast({ title: "Error", variant: "destructive" });
+    }
+  };
+
+  const pendingCustomOrders = orders.filter(o => o.status === 'pending' && (!o.quoteStatus || o.quoteStatus === 'pending'));
+  const quotedOrders = orders.filter(o => o.quoteStatus === 'sent' || o.quoteStatus === 'approved');
+  const otherCustomOrders = orders.filter(o => !pendingCustomOrders.includes(o) && !quotedOrders.includes(o));
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-xl text-[#3D2B1F] flex items-center gap-2">
+          <Sparkles className="w-5 h-5 text-[#D4AF37]" />
+          Custom Orders ({orders.length})
+        </h2>
+      </div>
+
+      {pendingCustomOrders.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="font-medium text-[#3D2B1F] flex items-center gap-2">
+            <Clock className="w-4 h-4" /> Awaiting Your Response ({pendingCustomOrders.length})
+          </h3>
+          {pendingCustomOrders.map(order => (
+            <div 
+              key={order.id}
+              className="p-4 rounded-lg border-2 border-[#D4AF37]/50"
+              style={{ backgroundColor: '#F9F1F1' }}
+              data-testid={`custom-order-${order.id}`}
+            >
+              <div className="flex flex-col sm:flex-row justify-between gap-3 mb-3">
+                <div className="cursor-pointer" onClick={() => onSelectOrder(order)}>
+                  <h4 className="font-display text-[#3D2B1F]">{order.customerName}</h4>
+                  <p className="text-sm text-[#3D2B1F]/60">{order.customerEmail}</p>
+                  <p className="text-xs text-[#3D2B1F]/50">{new Date(order.createdAt).toLocaleDateString()}</p>
+                </div>
+              </div>
+
+              {order.items.filter(i => i.customNotes).map((item, idx) => (
+                <div key={idx} className="mb-3 p-3 bg-[#D4AF37]/10 rounded-lg border border-[#D4AF37]/30">
+                  <p className="text-xs font-medium text-[#D4AF37] mb-1">{item.name}</p>
+                  <p className="text-sm text-[#3D2B1F] whitespace-pre-wrap">{item.customNotes}</p>
+                </div>
+              ))}
+
+              <div className="flex flex-col sm:flex-row gap-2 mt-4">
+                <div className="flex-1 flex gap-2">
+                  <div className="relative flex-1">
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3D2B1F]/40" />
+                    <input
+                      type="number"
+                      placeholder="Price"
+                      value={quotePrice[order.id] || ""}
+                      onChange={(e) => setQuotePrice({...quotePrice, [order.id]: e.target.value})}
+                      className="w-full pl-9 pr-4 py-2 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F]"
+                      data-testid={`input-quote-${order.id}`}
+                    />
+                  </div>
+                  <button
+                    onClick={() => approveOrder(order)}
+                    disabled={approvingOrder === order.id || !quotePrice[order.id]}
+                    className="flex items-center gap-1 px-4 py-2 rounded-lg text-white disabled:opacity-50"
+                    style={{ backgroundColor: '#22c55e' }}
+                    data-testid={`approve-${order.id}`}
+                  >
+                    <Check className="w-4 h-4" />
+                    <span className="hidden sm:inline">{approvingOrder === order.id ? "..." : "Approve"}</span>
+                  </button>
+                </div>
+                <button
+                  onClick={() => setShowDeclineModal(order)}
+                  className="flex items-center justify-center gap-1 px-4 py-2 rounded-lg bg-red-100 text-red-700 hover:bg-red-200"
+                  data-testid={`decline-${order.id}`}
+                >
+                  <XCircle className="w-4 h-4" />
+                  <span className="hidden sm:inline">Decline</span>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {quotedOrders.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="font-medium text-[#3D2B1F] flex items-center gap-2">
+            <Send className="w-4 h-4" /> Quote Sent ({quotedOrders.length})
+          </h3>
+          {quotedOrders.map(order => (
+            <div 
+              key={order.id}
+              onClick={() => onSelectOrder(order)}
+              className="p-4 rounded-lg border border-[#3D2B1F]/10 cursor-pointer hover:shadow-md transition-all"
+              style={{ backgroundColor: '#F9F1F1' }}
+            >
+              <div className="flex justify-between items-center">
+                <div>
+                  <h4 className="font-display text-[#3D2B1F]">{order.customerName}</h4>
+                  <p className="text-sm text-[#3D2B1F]/60">{order.items.filter(i => i.customNotes).map(i => i.name).join(', ')}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-display text-lg text-[#D4AF37]">${order.quotedPrice! / 100}</p>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Quote Sent</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {otherCustomOrders.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="font-medium text-[#3D2B1F]/60">Previous Custom Orders ({otherCustomOrders.length})</h3>
+          {otherCustomOrders.slice(0, 5).map(order => (
+            <div 
+              key={order.id}
+              onClick={() => onSelectOrder(order)}
+              className="p-3 rounded-lg border border-[#3D2B1F]/10 cursor-pointer hover:shadow-md transition-all opacity-75"
+              style={{ backgroundColor: '#F9F1F1' }}
+            >
+              <div className="flex justify-between items-center">
+                <div>
+                  <h4 className="font-display text-[#3D2B1F] text-sm">{order.customerName}</h4>
+                  <p className="text-xs text-[#3D2B1F]/60">{new Date(order.createdAt).toLocaleDateString()}</p>
+                </div>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                  order.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
+                  order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                  'bg-gray-100 text-gray-700'
+                }`}>{order.status}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {orders.length === 0 && (
+        <div className="text-center py-12">
+          <Sparkles className="w-12 h-12 text-[#D4AF37]/30 mx-auto mb-4" />
+          <p className="text-[#3D2B1F]/50 font-display">No custom orders yet</p>
+          <p className="text-sm text-[#3D2B1F]/40 mt-1">Custom order requests will appear here</p>
+        </div>
+      )}
+
+      <AnimatePresence>
+        {showDeclineModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            onClick={() => setShowDeclineModal(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              onClick={e => e.stopPropagation()}
+              className="w-full max-w-md rounded-2xl p-6"
+              style={{ backgroundColor: '#F9F1F1' }}
+            >
+              <h3 className="font-display text-lg text-[#3D2B1F] mb-4">Decline Order</h3>
+              <p className="text-sm text-[#3D2B1F]/70 mb-3">
+                Send a message to {showDeclineModal.customerName} explaining why this order cannot be fulfilled:
+              </p>
+              <textarea
+                value={declineMessage}
+                onChange={(e) => setDeclineMessage(e.target.value)}
+                className="w-full px-4 py-3 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F]"
+                rows={4}
+                placeholder="Optional message..."
+              />
+              <div className="flex gap-2 mt-4">
+                <button onClick={() => setShowDeclineModal(null)} className="flex-1 py-2 rounded-lg bg-[#3D2B1F]/10 text-[#3D2B1F]">
+                  Cancel
+                </button>
+                <button onClick={declineOrder} className="flex-1 py-2 rounded-lg bg-red-600 text-white">
+                  Decline & Notify
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function ContactsSection({ orders, token, onSelectOrder }: {
+  orders: Order[];
+  token: string;
+  onSelectOrder: (order: Order) => void;
+}) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showEmailModal, setShowEmailModal] = useState<{ email: string; name: string } | null>(null);
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const { toast } = useToast();
+
+  const uniqueCustomers = orders.reduce((acc, order) => {
+    if (!acc.find(c => c.email === order.customerEmail)) {
+      acc.push({
+        name: order.customerName,
+        email: order.customerEmail,
+        phone: order.customerPhone,
+        address: order.deliveryAddress,
+        orderCount: orders.filter(o => o.customerEmail === order.customerEmail).length,
+        totalSpent: orders.filter(o => o.customerEmail === order.customerEmail).reduce((sum, o) => sum + o.total, 0),
+        lastOrder: orders.filter(o => o.customerEmail === order.customerEmail).sort((a, b) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )[0]?.createdAt
+      });
+    }
+    return acc;
+  }, [] as Array<{ name: string; email: string; phone: string; address: string; orderCount: number; totalSpent: number; lastOrder: string }>);
+
+  const filteredCustomers = uniqueCustomers.filter(c =>
+    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.phone.includes(searchQuery)
+  ).sort((a, b) => new Date(b.lastOrder).getTime() - new Date(a.lastOrder).getTime());
+
+  const sendEmail = async () => {
+    if (!showEmailModal || !emailMessage) return;
+    setSending(true);
+    try {
+      const customerOrder = orders.find(o => o.customerEmail === showEmailModal.email);
+      if (customerOrder) {
+        await fetch(`/api/admin/orders/${customerOrder.id}/contact`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ subject: emailSubject || "Message from Diamond Dulceria", message: emailMessage }),
+        });
+        toast({ title: "Email Sent!", description: `Message sent to ${showEmailModal.name}` });
+        setShowEmailModal(null);
+        setEmailSubject("");
+        setEmailMessage("");
+      }
+    } catch {
+      toast({ title: "Error", variant: "destructive" });
+    }
+    setSending(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+        <h2 className="font-display text-xl text-[#3D2B1F] flex items-center gap-2">
+          <Users className="w-5 h-5 text-[#D4AF37]" />
+          Customers ({uniqueCustomers.length})
+        </h2>
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3D2B1F]/40" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search customers..."
+            className="w-full pl-10 pr-4 py-2 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F]"
+            data-testid="input-search-contacts"
+          />
+        </div>
+      </div>
+
+      {filteredCustomers.length === 0 ? (
+        <div className="text-center py-12">
+          <Users className="w-12 h-12 text-[#3D2B1F]/20 mx-auto mb-4" />
+          <p className="text-[#3D2B1F]/50 font-display">No customers found</p>
+        </div>
+      ) : (
+        <div className="grid gap-3">
+          {filteredCustomers.map((customer, i) => (
+            <div
+              key={i}
+              className="p-4 rounded-lg border border-[#3D2B1F]/10"
+              style={{ backgroundColor: '#F9F1F1' }}
+              data-testid={`contact-${customer.email}`}
+            >
+              <div className="flex flex-col sm:flex-row justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-display text-[#3D2B1F] truncate">{customer.name}</h3>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-[#3D2B1F]/60">
+                    <a href={`mailto:${customer.email}`} className="flex items-center gap-1 hover:text-[#D4AF37]">
+                      <Mail className="w-3 h-3" /> {customer.email}
+                    </a>
+                    <a href={`tel:${customer.phone}`} className="flex items-center gap-1 hover:text-[#D4AF37]">
+                      <Phone className="w-3 h-3" /> {customer.phone}
+                    </a>
+                  </div>
+                  <p className="text-xs text-[#3D2B1F]/50 mt-1 flex items-center gap-1">
+                    <MapPin className="w-3 h-3" /> {customer.address}
+                  </p>
+                </div>
+                <div className="flex flex-row sm:flex-col gap-3 sm:gap-1 items-center sm:items-end">
+                  <div className="text-right">
+                    <p className="text-xs text-[#3D2B1F]/50">{customer.orderCount} order(s)</p>
+                    <p className="font-display text-[#D4AF37]">${customer.totalSpent}</p>
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => {
+                        const customerOrders = orders.filter(o => o.customerEmail === customer.email)
+                          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                        if (customerOrders[0]) onSelectOrder(customerOrders[0]);
+                      }}
+                      className="p-2 rounded-lg bg-[#3D2B1F]/10 text-[#3D2B1F] hover:bg-[#3D2B1F]/20"
+                      title="View Orders"
+                    >
+                      <Package className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setShowEmailModal({ email: customer.email, name: customer.name })}
+                      className="p-2 rounded-lg text-white"
+                      style={{ backgroundColor: '#3D2B1F' }}
+                      title="Send Email"
+                    >
+                      <Send className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <AnimatePresence>
+        {showEmailModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            onClick={() => setShowEmailModal(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              onClick={e => e.stopPropagation()}
+              className="w-full max-w-md rounded-2xl p-6"
+              style={{ backgroundColor: '#F9F1F1' }}
+            >
+              <h3 className="font-display text-lg text-[#3D2B1F] mb-4">Email {showEmailModal.name}</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-[#3D2B1F]/70 mb-1">Subject</label>
+                  <input
+                    type="text"
+                    value={emailSubject}
+                    onChange={(e) => setEmailSubject(e.target.value)}
+                    placeholder="Message from Diamond Dulceria"
+                    className="w-full px-4 py-2 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-[#3D2B1F]/70 mb-1">Message</label>
+                  <textarea
+                    value={emailMessage}
+                    onChange={(e) => setEmailMessage(e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F]"
+                    rows={5}
+                    placeholder="Your message..."
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <button onClick={() => setShowEmailModal(null)} className="flex-1 py-2 rounded-lg bg-[#3D2B1F]/10 text-[#3D2B1F]">
+                  Cancel
+                </button>
+                <button
+                  onClick={sendEmail}
+                  disabled={!emailMessage || sending}
+                  className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-white disabled:opacity-50"
+                  style={{ backgroundColor: '#3D2B1F' }}
+                >
+                  <Send className="w-4 h-4" />
+                  {sending ? "Sending..." : "Send"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
