@@ -1,42 +1,106 @@
-import { type Order, type InsertOrder, orders } from "@shared/schema";
+import { type Order, type InsertOrder, orders, type Product, type InsertProduct, products, type AdminUser, type InsertAdminUser, adminUsers } from "@shared/schema";
 import { db } from "./db";
-import { sql } from "drizzle-orm";
+import { sql, eq, desc } from "drizzle-orm";
 
 export interface IStorage {
   createOrder(order: InsertOrder): Promise<Order>;
   getOrder(id: string): Promise<Order | undefined>;
   getAllOrders(): Promise<Order[]>;
   updateOrderPayment(orderId: string, paymentIntentId: string, status: string): Promise<Order | undefined>;
+  updateOrderStatus(orderId: string, status: string): Promise<Order | undefined>;
+  updateOrderNotes(orderId: string, notes: string): Promise<Order | undefined>;
+  updateOrderQuote(orderId: string, quotedPrice: number, quoteStatus: string): Promise<Order | undefined>;
+  createProduct(product: InsertProduct): Promise<Product>;
+  getProduct(id: string): Promise<Product | undefined>;
+  getAllProducts(): Promise<Product[]>;
+  updateProduct(id: string, updates: Partial<InsertProduct>): Promise<Product | undefined>;
+  deleteProduct(id: string): Promise<boolean>;
+  getAdminByEmail(email: string): Promise<AdminUser | undefined>;
+  createAdmin(admin: InsertAdminUser): Promise<AdminUser>;
 }
 
 export class DatabaseStorage implements IStorage {
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
-    const [order] = await db.insert(orders).values({
-      customerName: insertOrder.customerName,
-      customerEmail: insertOrder.customerEmail,
-      customerPhone: insertOrder.customerPhone,
-      deliveryAddress: insertOrder.deliveryAddress,
-      specialInstructions: insertOrder.specialInstructions,
-      items: insertOrder.items,
-      total: insertOrder.total,
-    }).returning();
+    const [order] = await db.insert(orders).values(insertOrder).returning();
     return order;
   }
 
   async getOrder(id: string): Promise<Order | undefined> {
-    const result = await db.select().from(orders);
-    return result.find(o => o.id === id);
+    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    return order;
   }
 
   async getAllOrders(): Promise<Order[]> {
-    return await db.select().from(orders);
+    return await db.select().from(orders).orderBy(desc(orders.createdAt));
   }
 
   async updateOrderPayment(orderId: string, paymentIntentId: string, status: string): Promise<Order | undefined> {
-    const result = await db.execute(
-      sql`UPDATE orders SET status = ${status} WHERE id = ${orderId} RETURNING *`
-    );
-    return result.rows[0] as Order | undefined;
+    const [order] = await db.update(orders)
+      .set({ paymentIntentId, status })
+      .where(eq(orders.id, orderId))
+      .returning();
+    return order;
+  }
+
+  async updateOrderStatus(orderId: string, status: string): Promise<Order | undefined> {
+    const [order] = await db.update(orders)
+      .set({ status })
+      .where(eq(orders.id, orderId))
+      .returning();
+    return order;
+  }
+
+  async updateOrderNotes(orderId: string, notes: string): Promise<Order | undefined> {
+    const [order] = await db.update(orders)
+      .set({ adminNotes: notes })
+      .where(eq(orders.id, orderId))
+      .returning();
+    return order;
+  }
+
+  async updateOrderQuote(orderId: string, quotedPrice: number, quoteStatus: string): Promise<Order | undefined> {
+    const [order] = await db.update(orders)
+      .set({ quotedPrice, quoteStatus })
+      .where(eq(orders.id, orderId))
+      .returning();
+    return order;
+  }
+
+  async createProduct(insertProduct: InsertProduct): Promise<Product> {
+    const [product] = await db.insert(products).values(insertProduct).returning();
+    return product;
+  }
+
+  async getProduct(id: string): Promise<Product | undefined> {
+    const [product] = await db.select().from(products).where(eq(products.id, id));
+    return product;
+  }
+
+  async getAllProducts(): Promise<Product[]> {
+    return await db.select().from(products).orderBy(desc(products.createdAt));
+  }
+
+  async updateProduct(id: string, updates: Partial<InsertProduct>): Promise<Product | undefined> {
+    const [product] = await db.update(products)
+      .set(updates)
+      .where(eq(products.id, id))
+      .returning();
+    return product;
+  }
+
+  async deleteProduct(id: string): Promise<boolean> {
+    const result = await db.delete(products).where(eq(products.id, id));
+    return true;
+  }
+
+  async getAdminByEmail(email: string): Promise<AdminUser | undefined> {
+    const [admin] = await db.select().from(adminUsers).where(eq(adminUsers.email, email));
+    return admin;
+  }
+
+  async createAdmin(insertAdmin: InsertAdminUser): Promise<AdminUser> {
+    const [admin] = await db.insert(adminUsers).values(insertAdmin).returning();
+    return admin;
   }
 
   // Stripe product queries
