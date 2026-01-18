@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Package, Clock, CheckCircle, RefreshCw, ArrowLeft, Phone, Mail, 
   MapPin, FileText, DollarSign, X, Send, Edit, Trash2, Plus,
-  Eye, EyeOff, Users, TrendingUp, Calendar, MessageSquare, Settings
+  TrendingUp, Calendar, MessageSquare, Settings, Search, Bell,
+  BarChart3, PieChart, Activity
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -87,16 +88,16 @@ function LoginForm({ onLogin }: { onLogin: (token: string, admin: any) => void }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F4C2C2' }}>
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#F4C2C2' }}>
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md p-8 rounded-2xl shadow-xl"
+        className="w-full max-w-md p-6 sm:p-8 rounded-2xl shadow-xl"
         style={{ backgroundColor: '#F9F1F1' }}
       >
-        <div className="text-center mb-8">
-          <DiamondLogo className="w-16 h-16 mx-auto text-[#3D2B1F] mb-4" />
-          <h1 className="font-display text-2xl text-[#3D2B1F]">Diamond Dulceria</h1>
+        <div className="text-center mb-6 sm:mb-8">
+          <DiamondLogo className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-[#3D2B1F] mb-4" />
+          <h1 className="font-display text-xl sm:text-2xl text-[#3D2B1F]">Diamond Dulceria</h1>
           <p className="text-[#3D2B1F]/60 text-sm mt-1">Admin Dashboard</p>
         </div>
         <form onSubmit={handleLogin} className="space-y-4">
@@ -144,7 +145,7 @@ function LoginForm({ onLogin }: { onLogin: (token: string, admin: any) => void }
 export default function Dashboard() {
   const [token, setToken] = useState<string | null>(null);
   const [admin, setAdmin] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "orders" | "products" | "settings">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "orders" | "products" | "analytics">("overview");
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -155,7 +156,14 @@ export default function Dashboard() {
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [lastOrderCount, setLastOrderCount] = useState(0);
+  const [showNewOrderAlert, setShowNewOrderAlert] = useState(false);
+  const [newOrderData, setNewOrderData] = useState<Order | null>(null);
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const { toast } = useToast();
+  const syncIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const savedToken = localStorage.getItem("adminToken");
@@ -166,9 +174,9 @@ export default function Dashboard() {
     }
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async (showLoading = true) => {
     if (!token) return;
-    setLoading(true);
+    if (showLoading) setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${token}` };
       const [ordersRes, productsRes, statsRes] = await Promise.all([
@@ -176,31 +184,56 @@ export default function Dashboard() {
         fetch("/api/admin/products", { headers }),
         fetch("/api/admin/stats", { headers }),
       ]);
-      const ordersData = await ordersRes.json();
-      const productsData = await productsRes.json();
-      const statsData = await statsRes.json();
       
       if (ordersRes.status === 401) {
         handleLogout();
         return;
       }
+
+      const ordersData = await ordersRes.json();
+      const productsData = await productsRes.json();
+      const statsData = await statsRes.json();
       
-      if (ordersData.success) setOrders(ordersData.orders);
+      if (ordersData.success) {
+        const sortedOrders = ordersData.orders.sort((a: Order, b: Order) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        
+        if (lastOrderCount > 0 && sortedOrders.length > lastOrderCount) {
+          const newOrder = sortedOrders[0];
+          setNewOrderData(newOrder);
+          setShowNewOrderAlert(true);
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('New Order!', {
+              body: `${newOrder.customerName} placed an order for $${newOrder.total}`,
+              icon: '/favicon.ico'
+            });
+          }
+        }
+        setLastOrderCount(sortedOrders.length);
+        setOrders(sortedOrders);
+      }
       if (productsData.success) setProducts(productsData.products);
       if (statsData.success) setStats(statsData.stats);
+      setLastSyncTime(new Date());
     } catch (error) {
       console.error("Failed to fetch data:", error);
     }
-    setLoading(false);
-  };
+    if (showLoading) setLoading(false);
+  }, [token, lastOrderCount]);
 
   useEffect(() => {
     if (token) {
       fetchData();
-      const interval = setInterval(fetchData, 30000);
-      return () => clearInterval(interval);
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+      syncIntervalRef.current = setInterval(() => fetchData(false), 15000);
+      return () => {
+        if (syncIntervalRef.current) clearInterval(syncIntervalRef.current);
+      };
     }
-  }, [token]);
+  }, [token, fetchData]);
 
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
@@ -221,7 +254,7 @@ export default function Dashboard() {
       });
       if (res.ok) {
         toast({ title: "Order Updated", description: `Status changed to ${status}` });
-        fetchData();
+        fetchData(false);
         setShowOrderModal(false);
       }
     } catch (error) {
@@ -247,30 +280,125 @@ export default function Dashboard() {
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
+  const filteredOrders = orders
+    .filter(order => {
+      const matchesSearch = searchQuery === "" || 
+        order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.customerEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.id.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+
+  const getAnalyticsData = () => {
+    const today = new Date();
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      return date.toLocaleDateString('en-US', { weekday: 'short' });
+    }).reverse();
+
+    const dailyRevenue = last7Days.map((day, i) => {
+      const targetDate = new Date(today);
+      targetDate.setDate(targetDate.getDate() - (6 - i));
+      const dayOrders = orders.filter(o => {
+        const orderDate = new Date(o.createdAt);
+        return orderDate.toDateString() === targetDate.toDateString() &&
+          (o.status === 'completed' || o.status === 'paid' || o.status === 'ready');
+      });
+      return dayOrders.reduce((sum, o) => sum + o.total, 0);
+    });
+
+    const statusCounts = {
+      pending: orders.filter(o => o.status === 'pending').length,
+      paid: orders.filter(o => o.status === 'paid').length,
+      ready: orders.filter(o => o.status === 'ready').length,
+      completed: orders.filter(o => o.status === 'completed').length,
+      cancelled: orders.filter(o => o.status === 'cancelled').length,
+    };
+
+    const categoryRevenue: Record<string, number> = {};
+    orders.forEach(order => {
+      order.items.forEach(item => {
+        const category = item.name.includes('Truffle') ? 'Truffles' : 
+                        item.name.includes('Cookie') ? 'Cookies' : 'Other';
+        categoryRevenue[category] = (categoryRevenue[category] || 0) + (item.price * item.quantity);
+      });
+    });
+
+    return { last7Days, dailyRevenue, statusCounts, categoryRevenue };
+  };
+
   if (!token) {
     return <LoginForm onLogin={(t, a) => { setToken(t); setAdmin(a); }} />;
   }
 
+  const analytics = getAnalyticsData();
+  const maxRevenue = Math.max(...analytics.dailyRevenue, 1);
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F4C2C2' }}>
+      <AnimatePresence>
+        {showNewOrderAlert && newOrderData && (
+          <motion.div
+            initial={{ opacity: 0, y: -100 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -100 }}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-white rounded-xl shadow-2xl p-4 max-w-sm w-[90%] border-2 border-[#D4AF37]"
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-[#D4AF37]/20 rounded-full">
+                <Bell className="w-6 h-6 text-[#D4AF37]" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-display text-[#3D2B1F] font-bold">New Order!</h3>
+                <p className="text-sm text-[#3D2B1F]/70">{newOrderData.customerName}</p>
+                <p className="text-lg font-bold text-[#D4AF37]">${newOrderData.total}</p>
+              </div>
+              <button 
+                onClick={() => setShowNewOrderAlert(false)}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <button
+              onClick={() => {
+                setSelectedOrder(newOrderData);
+                setShowOrderModal(true);
+                setShowNewOrderAlert(false);
+              }}
+              className="w-full mt-3 py-2 bg-[#3D2B1F] text-white rounded-lg text-sm font-medium"
+            >
+              View Order
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <header className="sticky top-0 z-40 border-b border-[#3D2B1F]/10" style={{ backgroundColor: '#3D2B1F' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <DiamondLogo className="w-8 h-8 text-[#F4C2C2]" />
-              <div>
-                <h1 className="font-display text-xl text-[#F4C2C2] tracking-wide">CRM Dashboard</h1>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <DiamondLogo className="w-6 h-6 sm:w-8 sm:h-8 text-[#F4C2C2]" />
+              <div className="hidden sm:block">
+                <h1 className="font-display text-lg sm:text-xl text-[#F4C2C2] tracking-wide">CRM Dashboard</h1>
                 <p className="text-[#F4C2C2]/60 text-xs">Welcome, {admin?.name}</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <button onClick={fetchData} disabled={loading} className="p-2 text-[#F4C2C2]/70 hover:text-[#F4C2C2] transition-colors" data-testid="button-refresh">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="hidden sm:flex items-center gap-2 text-[#F4C2C2]/60 text-xs">
+                {lastSyncTime && (
+                  <span>Synced {lastSyncTime.toLocaleTimeString()}</span>
+                )}
+              </div>
+              <button onClick={() => fetchData()} disabled={loading} className="p-2 text-[#F4C2C2]/70 hover:text-[#F4C2C2] transition-colors" data-testid="button-refresh">
                 <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
               </button>
-              <a href="/" className="flex items-center gap-2 px-4 py-2 text-sm text-[#F4C2C2] hover:text-[#F4C2C2]/80 transition-colors">
+              <a href="/" className="hidden sm:flex items-center gap-2 px-3 py-2 text-sm text-[#F4C2C2] hover:text-[#F4C2C2]/80 transition-colors">
                 <ArrowLeft className="w-4 h-4" /> Store
               </a>
-              <button onClick={handleLogout} className="px-4 py-2 text-sm text-[#F4C2C2]/70 hover:text-[#F4C2C2]" data-testid="button-logout">
+              <button onClick={handleLogout} className="px-3 py-2 text-sm text-[#F4C2C2]/70 hover:text-[#F4C2C2]" data-testid="button-logout">
                 Logout
               </button>
             </div>
@@ -278,17 +406,18 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6">
+        <div className="flex gap-2 mb-4 sm:mb-6 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0">
           {[
             { id: 'overview', label: 'Overview', icon: TrendingUp },
             { id: 'orders', label: 'Orders', icon: Package },
             { id: 'products', label: 'Products', icon: Settings },
+            { id: 'analytics', label: 'Analytics', icon: BarChart3 },
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+              className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
                 activeTab === tab.id 
                   ? 'bg-[#3D2B1F] text-[#F4C2C2]' 
                   : 'bg-[#F9F1F1] text-[#3D2B1F] hover:bg-[#3D2B1F]/10'
@@ -296,14 +425,14 @@ export default function Dashboard() {
               data-testid={`tab-${tab.id}`}
             >
               <tab.icon className="w-4 h-4" />
-              {tab.label}
+              <span className="hidden sm:inline">{tab.label}</span>
             </button>
           ))}
         </div>
 
         {activeTab === 'overview' && stats && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
               {[
                 { label: "Today's Orders", value: stats.todaysOrders, icon: Calendar, color: 'bg-purple-100' },
                 { label: "Pending", value: stats.pendingOrders, icon: Clock, color: 'bg-yellow-100' },
@@ -311,21 +440,21 @@ export default function Dashboard() {
                 { label: "Total Revenue", value: `$${stats.totalRevenue}`, icon: DollarSign, color: 'bg-emerald-100' },
                 { label: "Total Orders", value: stats.totalOrders, icon: Package, color: 'bg-blue-100' },
               ].map((stat, i) => (
-                <div key={i} className="p-4 rounded-lg border border-[#3D2B1F]/10" style={{ backgroundColor: '#F9F1F1' }}>
-                  <div className="flex items-center gap-3">
+                <div key={i} className="p-3 sm:p-4 rounded-lg border border-[#3D2B1F]/10" style={{ backgroundColor: '#F9F1F1' }}>
+                  <div className="flex items-center gap-2 sm:gap-3">
                     <div className={`p-2 rounded-full ${stat.color}`}>
-                      <stat.icon className="w-5 h-5 text-[#3D2B1F]" />
+                      <stat.icon className="w-4 h-4 sm:w-5 sm:h-5 text-[#3D2B1F]" />
                     </div>
                     <div>
                       <p className="text-[#3D2B1F]/60 text-xs">{stat.label}</p>
-                      <p className="text-xl font-display text-[#3D2B1F]">{stat.value}</p>
+                      <p className="text-lg sm:text-xl font-display text-[#3D2B1F]">{stat.value}</p>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="rounded-lg border border-[#3D2B1F]/10 p-6" style={{ backgroundColor: '#F9F1F1' }}>
+            <div className="rounded-lg border border-[#3D2B1F]/10 p-4 sm:p-6" style={{ backgroundColor: '#F9F1F1' }}>
               <h3 className="font-display text-lg text-[#3D2B1F] mb-4">Recent Orders</h3>
               {orders.slice(0, 5).map(order => (
                 <div 
@@ -333,13 +462,13 @@ export default function Dashboard() {
                   className="flex items-center justify-between py-3 border-b border-[#3D2B1F]/10 last:border-0 cursor-pointer hover:bg-[#3D2B1F]/5 -mx-2 px-2 rounded"
                   onClick={() => { setSelectedOrder(order); setShowOrderModal(true); }}
                 >
-                  <div>
-                    <p className="font-medium text-[#3D2B1F]">{order.customerName}</p>
-                    <p className="text-sm text-[#3D2B1F]/60">{order.items.length} item(s) • {formatDate(order.createdAt)}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-[#3D2B1F] truncate">{order.customerName}</p>
+                    <p className="text-xs sm:text-sm text-[#3D2B1F]/60">{order.items.length} item(s) • {formatDate(order.createdAt)}</p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right ml-2">
                     <p className="font-display text-[#3D2B1F]">${order.total}</p>
-                    <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.status)}`}>{order.status}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${getStatusColor(order.status)}`}>{order.status}</span>
                   </div>
                 </div>
               ))}
@@ -349,68 +478,92 @@ export default function Dashboard() {
 
         {activeTab === 'orders' && (
           <div className="space-y-4">
-            <div className="flex gap-2 flex-wrap">
-              {['all', 'pending', 'paid', 'ready', 'completed', 'cancelled'].map(filter => (
-                <button
-                  key={filter}
-                  className="px-3 py-1 rounded-full text-sm bg-[#F9F1F1] text-[#3D2B1F] hover:bg-[#3D2B1F]/10"
-                  onClick={() => {}}
-                  data-testid={`filter-${filter}`}
-                >
-                  {filter.charAt(0).toUpperCase() + filter.slice(1)}
-                </button>
-              ))}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3D2B1F]/40" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search orders by name, email, or ID..."
+                  className="w-full pl-10 pr-4 py-2 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F]"
+                  data-testid="input-search"
+                />
+              </div>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {['all', 'pending', 'paid', 'ready', 'completed', 'cancelled'].map(filter => (
+                  <button
+                    key={filter}
+                    onClick={() => setStatusFilter(filter)}
+                    className={`px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-all ${
+                      statusFilter === filter
+                        ? 'bg-[#3D2B1F] text-white'
+                        : 'bg-[#F9F1F1] text-[#3D2B1F] hover:bg-[#3D2B1F]/10'
+                    }`}
+                    data-testid={`filter-${filter}`}
+                  >
+                    {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            <p className="text-sm text-[#3D2B1F]/60">
+              Showing {filteredOrders.length} of {orders.length} orders (sorted by most recent)
+            </p>
 
             {loading && orders.length === 0 ? (
               <div className="text-center py-20">
                 <RefreshCw className="w-10 h-10 text-[#3D2B1F]/30 mx-auto mb-4 animate-spin" />
                 <p className="text-[#3D2B1F]/50">Loading orders...</p>
               </div>
-            ) : orders.length === 0 ? (
+            ) : filteredOrders.length === 0 ? (
               <div className="text-center py-20">
                 <Package className="w-16 h-16 text-[#3D2B1F]/20 mx-auto mb-4" />
-                <p className="text-[#3D2B1F]/50 font-display text-lg">No orders yet</p>
+                <p className="text-[#3D2B1F]/50 font-display text-lg">No orders found</p>
+                <p className="text-[#3D2B1F]/40 text-sm mt-2">Try adjusting your search or filters</p>
               </div>
             ) : (
-              orders.map((order, index) => (
-                <motion.div
-                  key={order.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.03 }}
-                  onClick={() => { setSelectedOrder(order); setShowOrderModal(true); }}
-                  className="p-4 rounded-lg border border-[#3D2B1F]/10 cursor-pointer hover:shadow-md transition-all"
-                  style={{ backgroundColor: '#F9F1F1' }}
-                  data-testid={`order-card-${order.id}`}
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-display text-[#3D2B1F]">{order.customerName}</h3>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                          {order.status}
-                        </span>
-                        {order.paymentMethod === 'card' && (
-                          <span className="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700">Paid Online</span>
+              <div className="space-y-3">
+                {filteredOrders.map((order, index) => (
+                  <motion.div
+                    key={order.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.02 }}
+                    onClick={() => { setSelectedOrder(order); setShowOrderModal(true); }}
+                    className="p-3 sm:p-4 rounded-lg border border-[#3D2B1F]/10 cursor-pointer hover:shadow-md transition-all"
+                    style={{ backgroundColor: '#F9F1F1' }}
+                    data-testid={`order-card-${order.id}`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <h3 className="font-display text-[#3D2B1F] truncate">{order.customerName}</h3>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                            {order.status}
+                          </span>
+                          {order.paymentMethod === 'card' && (
+                            <span className="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700">Paid Online</span>
+                          )}
+                        </div>
+                        <p className="text-[#3D2B1F]/60 text-sm truncate">
+                          {order.items.map(i => `${i.name} (x${i.quantity})`).join(', ')}
+                        </p>
+                        {order.items.some(i => i.customNotes) && (
+                          <span className="inline-flex items-center gap-1 text-xs text-[#D4AF37] mt-1">
+                            <FileText className="w-3 h-3" /> Has custom request
+                          </span>
                         )}
                       </div>
-                      <p className="text-[#3D2B1F]/60 text-sm">
-                        {order.items.map(i => `${i.name} (x${i.quantity})`).join(', ')}
-                      </p>
-                      {order.items.some(i => i.customNotes) && (
-                        <span className="inline-flex items-center gap-1 text-xs text-[#D4AF37] mt-1">
-                          <FileText className="w-3 h-3" /> Has custom request
-                        </span>
-                      )}
+                      <div className="text-right">
+                        <p className="font-display text-xl text-[#3D2B1F]">${order.total}</p>
+                        <p className="text-[#3D2B1F]/50 text-xs">{formatDate(order.createdAt)}</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-display text-xl text-[#3D2B1F]">${order.total}</p>
-                      <p className="text-[#3D2B1F]/50 text-xs">{formatDate(order.createdAt)}</p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))
+                  </motion.div>
+                ))}
+              </div>
             )}
           </div>
         )}
@@ -418,18 +571,18 @@ export default function Dashboard() {
         {activeTab === 'products' && (
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="font-display text-xl text-[#3D2B1F]">Products ({products.length})</h2>
+              <h2 className="font-display text-lg sm:text-xl text-[#3D2B1F]">Products ({products.length})</h2>
               <button
                 onClick={() => { setEditingProduct(null); setShowProductModal(true); }}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-white"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-white text-sm"
                 style={{ backgroundColor: '#3D2B1F' }}
                 data-testid="button-add-product"
               >
-                <Plus className="w-4 h-4" /> Add Product
+                <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Add Product</span>
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {products.map(product => (
                 <div 
                   key={product.id} 
@@ -438,19 +591,17 @@ export default function Dashboard() {
                   data-testid={`product-card-${product.id}`}
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="font-display text-[#3D2B1F]">{product.name}</h3>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-display text-[#3D2B1F] truncate">{product.name}</h3>
                       <p className="text-xs text-[#3D2B1F]/60 capitalize">{product.category}</p>
                     </div>
-                    <div className="flex gap-1">
-                      <button 
-                        onClick={() => { setEditingProduct(product); setShowProductModal(true); }}
-                        className="p-1 text-[#3D2B1F]/50 hover:text-[#3D2B1F]"
-                        data-testid={`edit-product-${product.id}`}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                    </div>
+                    <button 
+                      onClick={() => { setEditingProduct(product); setShowProductModal(true); }}
+                      className="p-1 text-[#3D2B1F]/50 hover:text-[#3D2B1F]"
+                      data-testid={`edit-product-${product.id}`}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
                   </div>
                   <p className="text-sm text-[#3D2B1F]/70 line-clamp-2 mb-2">{product.description}</p>
                   <div className="flex justify-between items-center">
@@ -461,6 +612,97 @@ export default function Dashboard() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'analytics' && (
+          <div className="space-y-4 sm:space-y-6">
+            <div className="rounded-lg border border-[#3D2B1F]/10 p-4 sm:p-6" style={{ backgroundColor: '#F9F1F1' }}>
+              <div className="flex items-center gap-2 mb-4">
+                <Activity className="w-5 h-5 text-[#D4AF37]" />
+                <h3 className="font-display text-lg text-[#3D2B1F]">Revenue (Last 7 Days)</h3>
+              </div>
+              <div className="flex items-end gap-2 h-40">
+                {analytics.dailyRevenue.map((revenue, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                    <div 
+                      className="w-full bg-[#D4AF37] rounded-t transition-all"
+                      style={{ height: `${(revenue / maxRevenue) * 100}%`, minHeight: revenue > 0 ? '4px' : '0' }}
+                    />
+                    <span className="text-xs text-[#3D2B1F]/60">{analytics.last7Days[i]}</span>
+                    <span className="text-xs font-medium text-[#3D2B1F]">${revenue}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="rounded-lg border border-[#3D2B1F]/10 p-4 sm:p-6" style={{ backgroundColor: '#F9F1F1' }}>
+                <div className="flex items-center gap-2 mb-4">
+                  <PieChart className="w-5 h-5 text-[#D4AF37]" />
+                  <h3 className="font-display text-lg text-[#3D2B1F]">Order Status</h3>
+                </div>
+                <div className="space-y-3">
+                  {Object.entries(analytics.statusCounts).map(([status, count]) => (
+                    <div key={status} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-3 h-3 rounded-full ${getStatusColor(status).split(' ')[0]}`} />
+                        <span className="text-sm text-[#3D2B1F] capitalize">{status}</span>
+                      </div>
+                      <span className="font-medium text-[#3D2B1F]">{count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-[#3D2B1F]/10 p-4 sm:p-6" style={{ backgroundColor: '#F9F1F1' }}>
+                <div className="flex items-center gap-2 mb-4">
+                  <BarChart3 className="w-5 h-5 text-[#D4AF37]" />
+                  <h3 className="font-display text-lg text-[#3D2B1F]">Revenue by Category</h3>
+                </div>
+                <div className="space-y-3">
+                  {Object.entries(analytics.categoryRevenue).map(([category, revenue]) => (
+                    <div key={category} className="flex items-center justify-between">
+                      <span className="text-sm text-[#3D2B1F]">{category}</span>
+                      <span className="font-medium text-[#D4AF37]">${revenue}</span>
+                    </div>
+                  ))}
+                  {Object.keys(analytics.categoryRevenue).length === 0 && (
+                    <p className="text-sm text-[#3D2B1F]/50">No sales data yet</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-[#3D2B1F]/10 p-4 sm:p-6" style={{ backgroundColor: '#F9F1F1' }}>
+              <h3 className="font-display text-lg text-[#3D2B1F] mb-4">Quick Stats</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-[#3D2B1F]/60 text-xs">Avg Order Value</p>
+                  <p className="text-xl font-display text-[#3D2B1F]">
+                    ${orders.length > 0 ? Math.round(orders.reduce((sum, o) => sum + o.total, 0) / orders.length) : 0}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[#3D2B1F]/60 text-xs">Completion Rate</p>
+                  <p className="text-xl font-display text-[#3D2B1F]">
+                    {orders.length > 0 ? Math.round((orders.filter(o => o.status === 'completed').length / orders.length) * 100) : 0}%
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[#3D2B1F]/60 text-xs">Custom Orders</p>
+                  <p className="text-xl font-display text-[#3D2B1F]">
+                    {orders.filter(o => o.items.some(i => i.customNotes)).length}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[#3D2B1F]/60 text-xs">Active Products</p>
+                  <p className="text-xl font-display text-[#3D2B1F]">
+                    {products.filter(p => p.active).length}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -475,7 +717,7 @@ export default function Dashboard() {
             onStatusUpdate={updateOrderStatus}
             onSendQuote={() => { setShowQuoteModal(true); }}
             onContact={() => { setShowContactModal(true); }}
-            onRefresh={fetchData}
+            onRefresh={() => fetchData(false)}
           />
         )}
 
@@ -484,7 +726,7 @@ export default function Dashboard() {
             order={selectedOrder}
             token={token}
             onClose={() => setShowQuoteModal(false)}
-            onSuccess={() => { setShowQuoteModal(false); fetchData(); }}
+            onSuccess={() => { setShowQuoteModal(false); fetchData(false); }}
           />
         )}
 
@@ -502,7 +744,7 @@ export default function Dashboard() {
             product={editingProduct}
             token={token}
             onClose={() => { setShowProductModal(false); setEditingProduct(null); }}
-            onSuccess={() => { setShowProductModal(false); setEditingProduct(null); fetchData(); }}
+            onSuccess={() => { setShowProductModal(false); setEditingProduct(null); fetchData(false); }}
           />
         )}
       </AnimatePresence>
@@ -546,7 +788,7 @@ function OrderModal({ order, token, onClose, onStatusUpdate, onSendQuote, onCont
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4"
       onClick={onClose}
     >
       <motion.div
@@ -554,12 +796,12 @@ function OrderModal({ order, token, onClose, onStatusUpdate, onSendQuote, onCont
         animate={{ scale: 1 }}
         exit={{ scale: 0.95 }}
         onClick={e => e.stopPropagation()}
-        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-6"
+        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-4 sm:p-6"
         style={{ backgroundColor: '#F9F1F1' }}
       >
-        <div className="flex justify-between items-start mb-6">
+        <div className="flex justify-between items-start mb-4 sm:mb-6">
           <div>
-            <h2 className="font-display text-2xl text-[#3D2B1F]">{order.customerName}</h2>
+            <h2 className="font-display text-xl sm:text-2xl text-[#3D2B1F]">{order.customerName}</h2>
             <p className="text-[#3D2B1F]/60 text-sm">Order #{order.id.slice(0, 8).toUpperCase()}</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-[#3D2B1F]/10 rounded-full">
@@ -567,26 +809,26 @@ function OrderModal({ order, token, onClose, onStatusUpdate, onSendQuote, onCont
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="flex items-start gap-2">
-            <Phone className="w-4 h-4 text-[#3D2B1F]/50 mt-1" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <a href={`tel:${order.customerPhone}`} className="flex items-start gap-2 p-3 bg-white rounded-lg">
+            <Phone className="w-4 h-4 text-[#3D2B1F]/50 mt-0.5" />
             <div>
               <p className="text-xs text-[#3D2B1F]/50">Phone</p>
-              <a href={`tel:${order.customerPhone}`} className="text-[#3D2B1F] hover:underline">{order.customerPhone}</a>
+              <p className="text-[#3D2B1F]">{order.customerPhone}</p>
             </div>
-          </div>
-          <div className="flex items-start gap-2">
-            <Mail className="w-4 h-4 text-[#3D2B1F]/50 mt-1" />
+          </a>
+          <a href={`mailto:${order.customerEmail}`} className="flex items-start gap-2 p-3 bg-white rounded-lg">
+            <Mail className="w-4 h-4 text-[#3D2B1F]/50 mt-0.5" />
             <div>
               <p className="text-xs text-[#3D2B1F]/50">Email</p>
-              <a href={`mailto:${order.customerEmail}`} className="text-[#3D2B1F] hover:underline">{order.customerEmail}</a>
+              <p className="text-[#3D2B1F] text-sm break-all">{order.customerEmail}</p>
             </div>
-          </div>
-          <div className="col-span-2 flex items-start gap-2">
-            <MapPin className="w-4 h-4 text-[#3D2B1F]/50 mt-1" />
+          </a>
+          <div className="sm:col-span-2 flex items-start gap-2 p-3 bg-white rounded-lg">
+            <MapPin className="w-4 h-4 text-[#3D2B1F]/50 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-xs text-[#3D2B1F]/50">Address</p>
-              <p className="text-[#3D2B1F]">{order.deliveryAddress}</p>
+              <p className="text-[#3D2B1F] text-sm">{order.deliveryAddress}</p>
             </div>
           </div>
         </div>
@@ -620,7 +862,7 @@ function OrderModal({ order, token, onClose, onStatusUpdate, onSendQuote, onCont
           </div>
         )}
 
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6">
           <label className="block text-sm text-[#3D2B1F]/70 mb-1">Admin Notes</label>
           <textarea
             value={notes}
@@ -640,25 +882,27 @@ function OrderModal({ order, token, onClose, onStatusUpdate, onSendQuote, onCont
           </button>
         </div>
 
-        <div className="flex flex-wrap gap-2 mb-4">
-          <p className="w-full text-sm text-[#3D2B1F]/60 mb-1">Update Status:</p>
-          {['pending', 'paid', 'ready', 'completed', 'cancelled'].map(status => (
-            <button
-              key={status}
-              onClick={() => onStatusUpdate(order.id, status)}
-              className={`px-3 py-1 rounded-full text-sm transition-all ${
-                order.status === status 
-                  ? 'bg-[#3D2B1F] text-white' 
-                  : 'bg-[#3D2B1F]/10 text-[#3D2B1F] hover:bg-[#3D2B1F]/20'
-              }`}
-              data-testid={`status-${status}`}
-            >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </button>
-          ))}
+        <div className="mb-4">
+          <p className="text-sm text-[#3D2B1F]/60 mb-2">Update Status:</p>
+          <div className="flex flex-wrap gap-2">
+            {['pending', 'paid', 'ready', 'completed', 'cancelled'].map(status => (
+              <button
+                key={status}
+                onClick={() => onStatusUpdate(order.id, status)}
+                className={`px-3 py-1 rounded-full text-sm transition-all ${
+                  order.status === status 
+                    ? 'bg-[#3D2B1F] text-white' 
+                    : 'bg-[#3D2B1F]/10 text-[#3D2B1F] hover:bg-[#3D2B1F]/20'
+                }`}
+                data-testid={`status-${status}`}
+              >
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <button
             onClick={onContact}
             className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-[#3D2B1F]/10 text-[#3D2B1F] hover:bg-[#3D2B1F]/20"
@@ -717,7 +961,7 @@ function QuoteModal({ order, token, onClose, onSuccess }: {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4"
       onClick={onClose}
     >
       <motion.div
@@ -725,7 +969,7 @@ function QuoteModal({ order, token, onClose, onSuccess }: {
         animate={{ scale: 1 }}
         exit={{ scale: 0.95 }}
         onClick={e => e.stopPropagation()}
-        className="w-full max-w-md rounded-2xl p-6"
+        className="w-full max-w-md rounded-2xl p-4 sm:p-6"
         style={{ backgroundColor: '#F9F1F1' }}
       >
         <h2 className="font-display text-xl text-[#3D2B1F] mb-4">Send Quote to {order.customerName}</h2>
@@ -808,7 +1052,7 @@ function ContactModal({ order, token, onClose, onSuccess }: {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4"
       onClick={onClose}
     >
       <motion.div
@@ -816,7 +1060,7 @@ function ContactModal({ order, token, onClose, onSuccess }: {
         animate={{ scale: 1 }}
         exit={{ scale: 0.95 }}
         onClick={e => e.stopPropagation()}
-        className="w-full max-w-md rounded-2xl p-6"
+        className="w-full max-w-md rounded-2xl p-4 sm:p-6"
         style={{ backgroundColor: '#F9F1F1' }}
       >
         <h2 className="font-display text-xl text-[#3D2B1F] mb-4">Contact {order.customerName}</h2>
@@ -927,7 +1171,7 @@ function ProductModal({ product, token, onClose, onSuccess }: {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4"
       onClick={onClose}
     >
       <motion.div
@@ -935,7 +1179,7 @@ function ProductModal({ product, token, onClose, onSuccess }: {
         animate={{ scale: 1 }}
         exit={{ scale: 0.95 }}
         onClick={e => e.stopPropagation()}
-        className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl p-6"
+        className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl p-4 sm:p-6"
         style={{ backgroundColor: '#F9F1F1' }}
       >
         <h2 className="font-display text-xl text-[#3D2B1F] mb-4">
