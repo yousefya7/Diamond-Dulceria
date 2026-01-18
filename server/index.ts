@@ -5,30 +5,6 @@ import { createServer } from "http";
 import { runMigrations } from 'stripe-replit-sync';
 import { getStripeSync } from "./stripeClient";
 import { WebhookHandlers } from "./webhookHandlers";
-import Stripe from 'stripe';
-
-// Stripe Connection Test
-async function testStripeConnection() {
-  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-  if (!stripeSecretKey) {
-    console.log('❌ Error: STRIPE_SECRET_KEY not found in environment');
-    return;
-  }
-  
-  try {
-    const stripe = new Stripe(stripeSecretKey);
-    const products = await stripe.products.list({ limit: 1 });
-    console.log('✅ Success: Replit is talking to Stripe!');
-    if (products.data.length > 0) {
-      console.log(`   Found product: ${products.data[0].name}`);
-    } else {
-      console.log('   (No products found in your Stripe account yet)');
-    }
-  } catch (error: any) {
-    console.log(`❌ Error connecting to Stripe: ${error.message}`);
-  }
-}
-
 const app = express();
 const httpServer = createServer(app);
 
@@ -100,9 +76,6 @@ async function initStripe() {
 }
 
 (async () => {
-  // Test Stripe connection first
-  await testStripeConnection();
-  
   // Initialize Stripe sync
   await initStripe();
 

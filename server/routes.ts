@@ -147,12 +147,13 @@ export async function registerRoutes(
       const baseUrl = `${protocol}://${host}`;
 
       const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card', 'cashapp', 'us_bank_account'],
+        payment_method_types: ['card', 'cashapp', 'link'],
         line_items: lineItems,
         mode: 'payment',
         success_url: `${baseUrl}/?payment=success&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${baseUrl}/?payment=cancelled`,
         customer_email: customerEmail,
+        automatic_tax: { enabled: false },
         metadata: {
           orderId: order.id,
           customerName: customerName || '',
