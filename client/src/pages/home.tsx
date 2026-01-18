@@ -938,7 +938,7 @@ export default function Home() {
                       </div>
                     </motion.div>
 
-                    <div className={`grid grid-cols-2 ${categoryProducts.length <= 3 ? 'md:grid-cols-3' : 'md:grid-cols-4'} gap-4 sm:gap-6`}>
+                    <div className={`grid ${categoryProducts.length === 3 ? 'grid-cols-3' : 'grid-cols-2'} ${categoryProducts.length <= 3 ? 'md:grid-cols-3' : 'md:grid-cols-4'} gap-3 sm:gap-6`}>
                       {categoryProducts.map((product, index) => (
                         <ProductCard key={product.id} product={product} index={index} />
                       ))}
