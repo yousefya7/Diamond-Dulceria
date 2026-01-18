@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingBag, Plus, Minus, X, Instagram, Sparkles, Send, Star, ChevronDown } from "lucide-react";
 import { loadStripe, Stripe } from "@stripe/stripe-js";
@@ -171,101 +171,47 @@ const DiamondStar = ({ className = "" }: { className?: string }) => (
   </svg>
 );
 
-// Embedded Payment Form Component
-function PaymentForm({ 
-  onSuccess, 
-  onError,
-  customerName,
-  orderId,
-  paymentIntentId
+// Inline Payment Section with Stripe hooks capture
+function InlinePaymentSection({ 
+  onReady,
+  stripeRef
 }: { 
-  onSuccess: () => void; 
-  onError: (msg: string) => void;
-  customerName: string;
-  orderId: string;
-  paymentIntentId: string;
+  onReady: (ready: boolean) => void;
+  stripeRef: React.MutableRefObject<{ stripe: Stripe | null; elements: any } | null>;
 }) {
   const stripe = useStripe();
   const elements = useElements();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!stripe || !elements) {
-      return;
+  
+  useEffect(() => {
+    if (stripe && elements) {
+      stripeRef.current = { stripe, elements };
     }
-
-    setIsProcessing(true);
-    setErrorMessage(null);
-
-    const { error, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: window.location.origin,
-      },
-      redirect: 'if_required',
-    });
-
-    if (error) {
-      setErrorMessage(error.message || 'Payment failed');
-      onError(error.message || 'Payment failed');
-      setIsProcessing(false);
-    } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-      // Confirm payment on server and update order status
-      try {
-        const response = await fetch('/api/checkout/confirm-payment', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderId, paymentIntentId: paymentIntent.id }),
-        });
-        
-        if (!response.ok) {
-          console.error('Failed to confirm payment on server');
-        }
-      } catch (err) {
-        console.error('Error confirming payment:', err);
-      }
-      
-      onSuccess();
-    } else {
-      setIsProcessing(false);
-    }
-  };
-
+  }, [stripe, elements, stripeRef]);
+  
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="space-y-3">
+      <h5 className="text-[#3D2B1F] font-display text-sm tracking-wide flex items-center gap-2">
+        <svg className="w-4 h-4 text-[#D4AF37]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+        </svg>
+        Payment Details
+      </h5>
       <div className="p-4 bg-white rounded-lg border border-[#3D2B1F]/10">
         <PaymentElement 
           options={{
             layout: 'tabs',
           }}
+          onReady={() => onReady(true)}
+          onChange={(event) => onReady(event.complete)}
         />
       </div>
-      
-      {errorMessage && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-600 text-sm">{errorMessage}</p>
-        </div>
-      )}
-      
-      <button
-        type="submit"
-        disabled={!stripe || isProcessing}
-        className="w-full py-4 text-white font-display text-lg tracking-wider rounded-full transition-all duration-300 disabled:opacity-50"
-        style={{ backgroundColor: '#3D2B1F' }}
-      >
-        {isProcessing ? 'PROCESSING...' : 'PAY NOW'}
-      </button>
-      
       <div className="flex items-center justify-center gap-2 text-[#3D2B1F]/50 text-xs">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
         </svg>
         Secured by Stripe
       </div>
-    </form>
+    </div>
   );
 }
 
@@ -320,12 +266,11 @@ export default function Home() {
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [customForm, setCustomForm] = useState({ dessertType: '', flavorRequest: '', eventDate: '' });
   const [paymentProcessing, setPaymentProcessing] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'pickup' | 'card'>('pickup');
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
-  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
   const [currentPaymentIntentId, setCurrentPaymentIntentId] = useState<string | null>(null);
+  const [paymentElementReady, setPaymentElementReady] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   const truffles = useMemo(() => products.filter(p => p.category === "truffle" || p.category === "truffles"), [products]);
   const cookies = useMemo(() => products.filter(p => p.category === "cookie" || p.category === "cookies"), [products]);
@@ -362,42 +307,24 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Handle return from Stripe checkout
+  // Prepare payment intent when checkout modal opens
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const payment = urlParams.get('payment');
-    const sessionId = urlParams.get('session_id');
-    
-    if (payment === 'success' && sessionId) {
-      // Verify payment and trigger order confirmation
-      fetch(`/api/checkout/session/${sessionId}`)
+    if (checkoutModalOpen && cart.length > 0 && !clientSecret) {
+      fetch('/api/checkout/prepare-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: cart }),
+      })
         .then(res => res.json())
         .then(data => {
-          if (data.status === 'paid') {
-            setCart([]);
-            localStorage.removeItem('diamond-cart');
-            setPaymentMethod('card');
-            setOrderPlaced(true);
-            setCheckoutModalOpen(true);
-          } else {
-            alert('Payment verification pending. Please check your email for confirmation.');
+          if (data.clientSecret) {
+            setClientSecret(data.clientSecret);
+            setCurrentPaymentIntentId(data.paymentIntentId);
           }
         })
-        .catch(err => {
-          console.error('Error verifying payment:', err);
-          setCart([]);
-          localStorage.removeItem('diamond-cart');
-          setPaymentMethod('card');
-          setOrderPlaced(true);
-          setCheckoutModalOpen(true);
-        });
-      // Clear URL params
-      window.history.replaceState({}, '', '/');
-    } else if (payment === 'cancelled') {
-      alert('Payment was cancelled. Your cart items are still saved.');
-      window.history.replaceState({}, '', '/');
+        .catch(err => console.error('Error preparing payment:', err));
     }
-  }, []);
+  }, [checkoutModalOpen, cart, clientSecret]);
 
   useEffect(() => {
     localStorage.setItem('diamond-cart', JSON.stringify(cart));
@@ -424,82 +351,82 @@ export default function Home() {
     setCartOpen(true);
   };
 
+  // Stripe hooks ref for form submission
+  const stripeRef = useRef<{ stripe: Stripe | null; elements: any } | null>(null);
+  
   const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    const stripe = stripeRef.current?.stripe;
+    const elements = stripeRef.current?.elements;
+    
+    if (!stripe || !elements) {
+      setPaymentError('Payment system not ready. Please wait a moment and try again.');
+      return;
+    }
+    
+    if (!paymentElementReady) {
+      setPaymentError('Please complete the payment details.');
+      return;
+    }
+    
     try {
       setPaymentProcessing(true);
+      setPaymentError(null);
       
-      if (paymentMethod === 'card') {
-        // Create payment intent for embedded checkout
-        const response = await fetch('/api/checkout/create-payment-intent', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            items: cart,
-            customerEmail: checkoutForm.email,
-            customerName: checkoutForm.name,
-            customerPhone: checkoutForm.phone,
-            deliveryAddress: `${checkoutForm.street}, ${checkoutForm.city}, ${checkoutForm.state} ${checkoutForm.zip}`,
-            specialInstructions: checkoutForm.notes || null,
-          }),
-        });
-
-        const data = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to create payment');
-        }
-
-        // Set client secret and show payment form
-        setClientSecret(data.clientSecret);
-        setCurrentOrderId(data.orderId);
-        setCurrentPaymentIntentId(data.paymentIntentId);
-        setShowPaymentForm(true);
+      // Step 1: Process payment with Stripe
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: window.location.origin,
+        },
+        redirect: 'if_required',
+      });
+      
+      if (error) {
+        setPaymentError(error.message || 'Payment failed. Please try again.');
         setPaymentProcessing(false);
         return;
       }
       
-      // Pay on pickup flow
-      const orderData = {
-        customerName: checkoutForm.name,
-        customerEmail: checkoutForm.email,
-        customerPhone: checkoutForm.phone,
-        deliveryAddress: `${checkoutForm.street}, ${checkoutForm.city}, ${checkoutForm.state} ${checkoutForm.zip}`,
-        specialInstructions: checkoutForm.notes || null,
-        items: cart,
-        total: subtotal,
-      };
-
-      const response = await fetch('/api/orders', {
+      if (!paymentIntent || paymentIntent.status !== 'succeeded') {
+        setPaymentError('Payment was not completed. Please try again.');
+        setPaymentProcessing(false);
+        return;
+      }
+      
+      // Step 2: Payment succeeded - now create the order
+      const response = await fetch('/api/checkout/complete-order', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paymentIntentId: paymentIntent.id,
+          customerName: checkoutForm.name,
+          customerEmail: checkoutForm.email,
+          customerPhone: checkoutForm.phone,
+          deliveryAddress: `${checkoutForm.street}, ${checkoutForm.city}, ${checkoutForm.state} ${checkoutForm.zip}`,
+          specialInstructions: checkoutForm.notes || null,
+          items: cart,
+        }),
       });
-
+      
       const data = await response.json();
       
       if (!response.ok) {
-        console.error('Order submission failed:', data);
-        throw new Error(data.error || 'Failed to submit order');
+        console.error('Order creation failed:', data);
+        setPaymentError('Payment succeeded but order creation failed. Please contact support.');
+        setPaymentProcessing(false);
+        return;
       }
-
-      console.log('Order submitted successfully:', data);
+      
+      // Success! Clear cart and show confirmation
+      setCart([]);
+      localStorage.removeItem('diamond-cart');
       setOrderPlaced(true);
-      setTimeout(() => {
-        setCheckoutModalOpen(false);
-        setOrderPlaced(false);
-        setCart([]);
-        setCheckoutForm({ name: '', email: '', phone: '', street: '', city: '', state: '', zip: '', notes: '' });
-        setPaymentMethod('pickup');
-      }, 3000);
+      
     } catch (error: any) {
-      console.error('Error submitting order:', error);
-      alert(`Failed to submit order: ${error.message || 'Please try again.'}`);
+      console.error('Error processing order:', error);
+      setPaymentError(error.message || 'An error occurred. Please try again.');
     } finally {
       setPaymentProcessing(false);
     }
@@ -1318,132 +1245,48 @@ export default function Home() {
                       <Sparkles className="w-10 h-10 text-[#D4AF37]" />
                     </div>
                     <h4 className="font-display text-2xl text-[#3D2B1F] mb-3 tracking-wide">
-                      {paymentMethod === 'card' || !checkoutForm.name ? 'Payment Successful!' : 'Order Received!'}
+                      Payment Successful!
                     </h4>
                     <p className="text-[#3D2B1F]/60 mb-4">
-                      {paymentMethod === 'card' || !checkoutForm.name ? (
-                        <>Thank you for your payment!<br/>We'll contact you shortly when your order is ready for pickup.</>
-                      ) : (
-                        <>Thank you for your order, {checkoutForm.name.split(' ')[0]}!<br/>We'll contact you shortly when your order is ready for pickup.</>
-                      )}
+                      Thank you for your payment!<br/>We'll contact you shortly when your order is ready for pickup.
                     </p>
-                    {paymentMethod !== 'card' && checkoutForm.name && (
-                      <>
-                        <div className="p-4 bg-[#3D2B1F]/5 rounded-lg border border-[#3D2B1F]/10 mb-4">
-                          <p className="text-[#3D2B1F]/80 text-sm font-medium">Payment Due on Pickup: ${subtotal}</p>
-                        </div>
-                        <div className="p-4 bg-[#D4AF37]/10 rounded-lg border border-[#D4AF37]/30 text-left">
-                          <p className="text-[#3D2B1F] text-xs font-medium mb-2 uppercase tracking-wide">Save Your Order Details:</p>
-                          <p className="text-[#3D2B1F]/70 text-sm">
-                            <strong>Name:</strong> {checkoutForm.name}<br/>
-                            <strong>Phone:</strong> {checkoutForm.phone}<br/>
-                            <strong>Total:</strong> ${subtotal} (pay on pickup)
-                          </p>
-                        </div>
-                      </>
-                    )}
+                    <div className="p-4 bg-[#D4AF37]/10 rounded-lg border border-[#D4AF37]/30 text-left mb-4">
+                      <p className="text-[#3D2B1F] text-xs font-medium mb-2 uppercase tracking-wide">A confirmation email has been sent to:</p>
+                      <p className="text-[#3D2B1F]/70 text-sm">{checkoutForm.email || 'your email address'}</p>
+                    </div>
                     <button
                       onClick={() => {
                         setCheckoutModalOpen(false);
                         setOrderPlaced(false);
-                        setShowPaymentForm(false);
                         setClientSecret(null);
+                        setCurrentPaymentIntentId(null);
+                        setPaymentElementReady(false);
+                        setPaymentError(null);
                         setCheckoutForm({ name: '', email: '', phone: '', street: '', city: '', state: '', zip: '', notes: '' });
-                        setPaymentMethod('pickup');
                       }}
                       className="mt-6 px-8 py-3 bg-[#3D2B1F] text-[#F9F1F1] font-display tracking-wide rounded-full hover:bg-[#2a1e15] transition-colors"
                     >
                       CONTINUE SHOPPING
                     </button>
                   </div>
-                ) : showPaymentForm && clientSecret && stripePromise ? (
-                  <div className="flex-1 overflow-y-auto p-6 sm:p-8">
-                    <div className="mb-6">
-                      <button
-                        onClick={() => {
-                          setShowPaymentForm(false);
-                          setClientSecret(null);
-                        }}
-                        className="text-[#3D2B1F]/60 hover:text-[#3D2B1F] text-sm flex items-center gap-2 mb-4"
-                      >
-                        ← Back to checkout
-                      </button>
-                      <h4 className="font-display text-lg text-[#3D2B1F] mb-2">Complete Your Payment</h4>
-                      <p className="text-[#3D2B1F]/60 text-sm mb-4">Total: ${subtotal}</p>
-                    </div>
-                    <Elements 
-                      stripe={stripePromise} 
-                      options={{ 
-                        clientSecret,
-                        appearance: {
-                          theme: 'stripe',
-                          variables: {
-                            colorPrimary: '#3D2B1F',
-                            colorBackground: '#ffffff',
-                            colorText: '#3D2B1F',
-                            fontFamily: 'Georgia, serif',
-                          }
+                ) : clientSecret && stripePromise ? (
+                  <Elements 
+                    stripe={stripePromise} 
+                    options={{ 
+                      clientSecret,
+                      appearance: {
+                        theme: 'stripe',
+                        variables: {
+                          colorPrimary: '#3D2B1F',
+                          colorBackground: '#ffffff',
+                          colorText: '#3D2B1F',
+                          fontFamily: 'Georgia, serif',
                         }
-                      }}
-                    >
-                      <PaymentForm 
-                        customerName={checkoutForm.name}
-                        orderId={currentOrderId!}
-                        paymentIntentId={currentPaymentIntentId!}
-                        onSuccess={() => {
-                          setCart([]);
-                          localStorage.removeItem('diamond-cart');
-                          setShowPaymentForm(false);
-                          setClientSecret(null);
-                          setCurrentPaymentIntentId(null);
-                          setOrderPlaced(true);
-                        }}
-                        onError={(msg) => {
-                          console.error('Payment error:', msg);
-                        }}
-                      />
-                    </Elements>
-                  </div>
-                ) : (
-                  <form onSubmit={handleCheckoutSubmit} className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-5">
-                    <div className="space-y-3">
-                      <h5 className="text-[#3D2B1F] font-display text-sm tracking-wide">Choose Payment Method</h5>
-                      <div className="grid grid-cols-2 gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setPaymentMethod('pickup')}
-                          className={`p-4 rounded-lg border-2 transition-all ${
-                            paymentMethod === 'pickup'
-                              ? 'border-[#D4AF37] bg-[#D4AF37]/10'
-                              : 'border-[#3D2B1F]/20 bg-white hover:border-[#3D2B1F]/40'
-                          }`}
-                        >
-                          <Sparkles className={`w-5 h-5 mx-auto mb-2 ${paymentMethod === 'pickup' ? 'text-[#D4AF37]' : 'text-[#3D2B1F]/40'}`} />
-                          <p className={`text-sm font-display tracking-wide ${paymentMethod === 'pickup' ? 'text-[#3D2B1F]' : 'text-[#3D2B1F]/60'}`}>Pay on Pickup</p>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setPaymentMethod('card')}
-                          className={`p-4 rounded-lg border-2 transition-all ${
-                            paymentMethod === 'card'
-                              ? 'border-[#D4AF37] bg-[#D4AF37]/10'
-                              : 'border-[#3D2B1F]/20 bg-white hover:border-[#3D2B1F]/40'
-                          }`}
-                        >
-                          <svg className={`w-5 h-5 mx-auto mb-2 ${paymentMethod === 'card' ? 'text-[#D4AF37]' : 'text-[#3D2B1F]/40'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                          </svg>
-                          <p className={`text-sm font-display tracking-wide ${paymentMethod === 'card' ? 'text-[#3D2B1F]' : 'text-[#3D2B1F]/60'}`}>Pay with Card</p>
-                        </button>
-                      </div>
-                      <p className="text-[#3D2B1F]/60 text-xs text-center">
-                        {paymentMethod === 'pickup' 
-                          ? 'Payment will be collected when you pick up your order.' 
-                          : 'Pay securely now with your credit or debit card.'}
-                      </p>
-                    </div>
-
-                    <div>
+                      }
+                    }}
+                  >
+                    <form onSubmit={handleCheckoutSubmit} className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-5">
+                      <div>
                       <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">
                         Full Name <span className="text-red-500">*</span>
                       </label>
@@ -1555,30 +1398,56 @@ export default function Home() {
                       />
                     </div>
 
-                    <div className="pt-2">
-                      <div className="flex justify-between items-center mb-3 text-[#3D2B1F]">
-                        <span className="text-sm opacity-60">Order Total</span>
-                        <span className="font-display text-xl">${subtotal}</span>
+                      <InlinePaymentSection 
+                        onReady={setPaymentElementReady}
+                        stripeRef={stripeRef}
+                      />
+
+                      <div className="pt-2">
+                        <div className="flex justify-between items-center mb-3 text-[#3D2B1F]">
+                          <span className="text-sm opacity-60">Order Total</span>
+                          <span className="font-display text-xl">${subtotal}</span>
+                        </div>
+                        <div className="mb-4 p-3 bg-[#D4AF37]/10 rounded-lg border border-[#D4AF37]/30">
+                          <p className="text-[#3D2B1F] text-xs text-center font-bold">
+                            Note: All orders must be picked up unless delivery is coordinated beforehand.
+                          </p>
+                        </div>
+                        
+                        {paymentError && (
+                          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <p className="text-red-600 text-sm">{paymentError}</p>
+                          </div>
+                        )}
+                        
+                        <button
+                          type="submit"
+                          disabled={paymentProcessing || !paymentElementReady}
+                          className="w-full py-4 bg-[#3D2B1F] hover:bg-[#2a1e15] text-[#F9F1F1] text-lg font-display tracking-[0.15em] rounded-full transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                        >
+                          {paymentProcessing ? (
+                            <>
+                              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              PROCESSING...
+                            </>
+                          ) : 'PLACE ORDER'}
+                        </button>
                       </div>
-                      <div className="mb-4 p-3 bg-[#D4AF37]/10 rounded-lg border border-[#D4AF37]/30">
-                        <p className="text-[#3D2B1F] text-xs text-center font-bold">
-                          Note: All orders must be picked up unless delivery is coordinated beforehand.
-                        </p>
-                      </div>
-                      <button
-                        type="submit"
-                        disabled={paymentProcessing}
-                        className="w-full py-4 bg-[#3D2B1F] hover:bg-[#2a1e15] text-[#F9F1F1] text-lg font-display tracking-[0.15em] rounded-full transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {paymentProcessing ? 'PROCESSING...' : paymentMethod === 'card' ? 'PAY NOW' : 'CONFIRM ORDER'}
-                      </button>
-                      {paymentMethod === 'card' && (
-                        <p className="text-[#3D2B1F]/50 text-xs text-center mt-3">
-                          Secure payment powered by Stripe
-                        </p>
-                      )}
+                    </form>
+                  </Elements>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center p-8">
+                    <div className="text-center">
+                      <svg className="animate-spin h-8 w-8 text-[#3D2B1F] mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <p className="text-[#3D2B1F]/60 text-sm">Loading payment form...</p>
                     </div>
-                  </form>
+                  </div>
                 )}
             </div>
           </div>

@@ -69,7 +69,162 @@ export async function registerRoutes(
     }
   });
 
-  // Create Stripe payment intent for embedded checkout
+  // Create Stripe payment intent for inline checkout (payment-first flow)
+  // This creates a PaymentIntent without creating an order
+  app.post("/api/checkout/prepare-payment", async (req, res) => {
+    try {
+      const { items } = req.body;
+      
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: "Items are required" });
+      }
+
+      // Validate prices server-side from database
+      const dbProducts = await storage.getAllProducts();
+      const productPriceMap = new Map(dbProducts.map(p => [String(p.id), p.price]));
+      
+      let total = 0;
+      const validatedItems = [];
+      
+      for (const item of items) {
+        if (!item.id || typeof item.quantity !== 'number' || item.quantity < 1) {
+          return res.status(400).json({ error: "Invalid item data" });
+        }
+        
+        const itemId = String(item.id);
+        const dbPrice = productPriceMap.get(itemId);
+        if (dbPrice === undefined) {
+          return res.status(400).json({ error: `Product not found: ${itemId}` });
+        }
+        
+        const price = Number(dbPrice);
+        total += price * item.quantity;
+        validatedItems.push({ ...item, id: itemId, price });
+      }
+
+      const stripe = await getUncachableStripeClient();
+      
+      // Create a hash of item IDs for verification
+      const itemIds = validatedItems.map((item: any) => `${item.id}:${item.quantity}`).sort().join(',');
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(total * 100),
+        currency: 'usd',
+        payment_method_types: ['card', 'cashapp', 'link'],
+        metadata: {
+          validatedTotal: String(total),
+          itemHash: itemIds,
+        },
+      });
+
+      res.json({ 
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
+        validatedTotal: total,
+        validatedItems
+      });
+    } catch (error: any) {
+      console.error("Error preparing payment:", error);
+      res.status(500).json({ error: error.message || "Failed to prepare payment" });
+    }
+  });
+
+  // Complete order after payment succeeds (payment-first flow)
+  // Creates order and sends emails only after payment is verified
+  app.post("/api/checkout/complete-order", async (req, res) => {
+    try {
+      const { paymentIntentId, customerName, customerEmail, customerPhone, deliveryAddress, specialInstructions, items } = req.body;
+      
+      if (!paymentIntentId || !customerName || !customerEmail) {
+        return res.status(400).json({ error: "Payment intent ID, customer name, and email are required" });
+      }
+
+      const stripe = await getUncachableStripeClient();
+      
+      // Verify payment was successful
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      
+      if (paymentIntent.status !== 'succeeded') {
+        return res.status(400).json({ error: "Payment not completed" });
+      }
+
+      // Validate prices server-side from database
+      const dbProducts = await storage.getAllProducts();
+      const productPriceMap = new Map(dbProducts.map(p => [String(p.id), p.price]));
+      
+      let total = 0;
+      const validatedItems = [];
+      
+      for (const item of items) {
+        const itemId = String(item.id);
+        const dbPrice = productPriceMap.get(itemId);
+        if (dbPrice === undefined) {
+          return res.status(400).json({ error: `Product not found: ${itemId}` });
+        }
+        const price = Number(dbPrice);
+        total += price * item.quantity;
+        validatedItems.push({ ...item, id: itemId, price });
+      }
+      
+      // Verify PaymentIntent amount matches calculated total
+      const expectedAmount = Math.round(total * 100);
+      if (paymentIntent.amount !== expectedAmount) {
+        return res.status(400).json({ error: "Payment amount mismatch" });
+      }
+      
+      // Verify item hash matches if present in metadata
+      const itemIds = validatedItems.map((item: any) => `${item.id}:${item.quantity}`).sort().join(',');
+      if (paymentIntent.metadata?.itemHash && paymentIntent.metadata.itemHash !== itemIds) {
+        return res.status(400).json({ error: "Cart mismatch - items changed since payment" });
+      }
+
+      // Create order and immediately set to paid status
+      const createdOrder = await storage.createOrder({
+        customerName,
+        customerEmail,
+        customerPhone: customerPhone || '',
+        deliveryAddress: deliveryAddress || '',
+        specialInstructions: specialInstructions || null,
+        items: validatedItems,
+        total,
+      });
+      
+      // Update to paid status
+      const order = await storage.updateOrderStatus(createdOrder.id, 'paid');
+      
+      if (!order) {
+        return res.status(500).json({ error: "Failed to update order status" });
+      }
+
+      // Send confirmation emails
+      const orderData = {
+        id: order.id,
+        customerName: order.customerName,
+        customerEmail: order.customerEmail,
+        customerPhone: order.customerPhone,
+        deliveryAddress: order.deliveryAddress,
+        specialInstructions: order.specialInstructions,
+        items: order.items,
+        total: order.total,
+      };
+      
+      try {
+        await Promise.all([
+          sendOrderNotification(orderData),
+          sendCustomerConfirmation(orderData),
+        ]);
+      } catch (emailError) {
+        console.error("Email error:", emailError);
+      }
+
+      res.json({ success: true, order });
+    } catch (error: any) {
+      console.error("Error completing order:", error);
+      res.status(500).json({ error: error.message || "Failed to complete order" });
+    }
+  });
+
+  // Legacy: Create Stripe payment intent (kept for compatibility)
   app.post("/api/checkout/create-payment-intent", async (req, res) => {
     try {
       const { items, customerEmail, customerName, customerPhone, deliveryAddress, specialInstructions } = req.body;
@@ -84,7 +239,7 @@ export async function registerRoutes(
 
       // Validate prices server-side from database
       const dbProducts = await storage.getAllProducts();
-      const productPriceMap = new Map(dbProducts.map(p => [p.id, p.price]));
+      const productPriceMap = new Map(dbProducts.map(p => [String(p.id), p.price]));
       
       let total = 0;
       const validatedItems = [];
@@ -94,14 +249,15 @@ export async function registerRoutes(
           return res.status(400).json({ error: "Invalid item data" });
         }
         
-        const dbPrice = productPriceMap.get(item.id);
+        const itemId = String(item.id);
+        const dbPrice = productPriceMap.get(itemId);
         if (dbPrice === undefined) {
-          return res.status(400).json({ error: `Product not found: ${item.id}` });
+          return res.status(400).json({ error: `Product not found: ${itemId}` });
         }
         
-        const price = parseFloat(dbPrice);
+        const price = Number(dbPrice);
         total += price * item.quantity;
-        validatedItems.push({ ...item, price });
+        validatedItems.push({ ...item, id: itemId, price });
       }
       
       // Create order first
@@ -118,7 +274,7 @@ export async function registerRoutes(
       const stripe = await getUncachableStripeClient();
 
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(total * 100), // Convert to cents
+        amount: Math.round(total * 100),
         currency: 'usd',
         payment_method_types: ['card', 'cashapp', 'link'],
         metadata: {
@@ -140,7 +296,7 @@ export async function registerRoutes(
     }
   });
 
-  // Confirm payment and update order status
+  // Legacy: Confirm payment and update order status
   app.post("/api/checkout/confirm-payment", async (req, res) => {
     try {
       const { orderId, paymentIntentId } = req.body;
@@ -209,7 +365,7 @@ export async function registerRoutes(
 
       // Validate prices server-side from database
       const dbProducts = await storage.getAllProducts();
-      const productPriceMap = new Map(dbProducts.map(p => [p.id, p.price]));
+      const productPriceMap = new Map(dbProducts.map(p => [String(p.id), p.price]));
       
       let total = 0;
       const validatedItems = [];
@@ -219,14 +375,15 @@ export async function registerRoutes(
           return res.status(400).json({ error: "Invalid item data" });
         }
         
-        const dbPrice = productPriceMap.get(item.id);
+        const itemId = String(item.id);
+        const dbPrice = productPriceMap.get(itemId);
         if (dbPrice === undefined) {
-          return res.status(400).json({ error: `Product not found: ${item.id}` });
+          return res.status(400).json({ error: `Product not found: ${itemId}` });
         }
         
-        const price = parseFloat(dbPrice);
+        const price = Number(dbPrice);
         total += price * item.quantity;
-        validatedItems.push({ ...item, price });
+        validatedItems.push({ ...item, id: itemId, price });
       }
 
       // Create order first with "pending_payment" status
