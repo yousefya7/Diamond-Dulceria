@@ -140,6 +140,17 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
+  app.delete("/api/admin/orders/:id", verifyAdminAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteOrder(id);
+      res.json({ success: true, message: "Order deleted" });
+    } catch (error: any) {
+      console.error("Error deleting order:", error);
+      res.status(500).json({ error: "Failed to delete order" });
+    }
+  });
+
   app.post("/api/admin/orders/:id/quote", verifyAdminAuth, async (req, res) => {
     try {
       const { id } = req.params;
@@ -470,6 +481,54 @@ export function registerAdminRoutes(app: Express) {
     } catch (error: any) {
       console.error("Error seeding products:", error);
       res.status(500).json({ error: "Failed to seed products" });
+    }
+  });
+
+  // Site Settings endpoints
+  app.get("/api/admin/settings", verifyAdminAuth, async (req, res) => {
+    try {
+      const settings = await storage.getAllSiteSettings();
+      const settingsMap: Record<string, string> = {};
+      settings.forEach(s => { settingsMap[s.key] = s.value; });
+      res.json({ success: true, settings: settingsMap });
+    } catch (error: any) {
+      console.error("Error fetching settings:", error);
+      res.status(500).json({ error: "Failed to fetch settings" });
+    }
+  });
+
+  app.put("/api/admin/settings", verifyAdminAuth, async (req, res) => {
+    try {
+      const { settings } = req.body;
+      if (!settings || typeof settings !== 'object') {
+        return res.status(400).json({ error: "Settings object required" });
+      }
+      
+      const updated: Record<string, string> = {};
+      for (const [key, value] of Object.entries(settings)) {
+        if (typeof value === 'string') {
+          await storage.upsertSiteSetting(key, value);
+          updated[key] = value;
+        }
+      }
+      
+      res.json({ success: true, settings: updated });
+    } catch (error: any) {
+      console.error("Error updating settings:", error);
+      res.status(500).json({ error: "Failed to update settings" });
+    }
+  });
+
+  // Public endpoint to get site settings for frontend
+  app.get("/api/settings", async (req, res) => {
+    try {
+      const settings = await storage.getAllSiteSettings();
+      const settingsMap: Record<string, string> = {};
+      settings.forEach(s => { settingsMap[s.key] = s.value; });
+      res.json({ success: true, settings: settingsMap });
+    } catch (error: any) {
+      console.error("Error fetching public settings:", error);
+      res.status(500).json({ error: "Failed to fetch settings" });
     }
   });
 }

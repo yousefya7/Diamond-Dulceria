@@ -1,4 +1,4 @@
-import { type Order, type InsertOrder, orders, type Product, type InsertProduct, products, type AdminUser, type InsertAdminUser, adminUsers } from "@shared/schema";
+import { type Order, type InsertOrder, orders, type Product, type InsertProduct, products, type AdminUser, type InsertAdminUser, adminUsers, type SiteSetting, type InsertSiteSetting, siteSettings } from "@shared/schema";
 import { db } from "./db";
 import { sql, eq, desc } from "drizzle-orm";
 
@@ -10,6 +10,7 @@ export interface IStorage {
   updateOrderStatus(orderId: string, status: string): Promise<Order | undefined>;
   updateOrderNotes(orderId: string, notes: string): Promise<Order | undefined>;
   updateOrderQuote(orderId: string, quotedPrice: number, quoteStatus: string): Promise<Order | undefined>;
+  deleteOrder(id: string): Promise<boolean>;
   createProduct(product: InsertProduct): Promise<Product>;
   createProductWithId(id: string, product: InsertProduct): Promise<Product>;
   getProduct(id: string): Promise<Product | undefined>;
@@ -18,6 +19,9 @@ export interface IStorage {
   deleteProduct(id: string): Promise<boolean>;
   getAdminByEmail(email: string): Promise<AdminUser | undefined>;
   createAdmin(admin: InsertAdminUser): Promise<AdminUser>;
+  getSiteSetting(key: string): Promise<SiteSetting | undefined>;
+  getAllSiteSettings(): Promise<SiteSetting[]>;
+  upsertSiteSetting(key: string, value: string): Promise<SiteSetting>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -65,6 +69,11 @@ export class DatabaseStorage implements IStorage {
       .where(eq(orders.id, orderId))
       .returning();
     return order;
+  }
+
+  async deleteOrder(id: string): Promise<boolean> {
+    await db.delete(orders).where(eq(orders.id, id));
+    return true;
   }
 
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
@@ -166,6 +175,30 @@ export class DatabaseStorage implements IStorage {
       console.error('Error fetching Stripe price:', error);
       return null;
     }
+  }
+
+  async getSiteSetting(key: string): Promise<SiteSetting | undefined> {
+    const [setting] = await db.select().from(siteSettings).where(eq(siteSettings.key, key));
+    return setting;
+  }
+
+  async getAllSiteSettings(): Promise<SiteSetting[]> {
+    return await db.select().from(siteSettings);
+  }
+
+  async upsertSiteSetting(key: string, value: string): Promise<SiteSetting> {
+    const existing = await this.getSiteSetting(key);
+    if (existing) {
+      const [updated] = await db.update(siteSettings)
+        .set({ value, updatedAt: new Date() })
+        .where(eq(siteSettings.key, key))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(siteSettings)
+      .values({ key, value })
+      .returning();
+    return created;
   }
 }
 

@@ -145,7 +145,7 @@ function LoginForm({ onLogin }: { onLogin: (token: string, admin: any) => void }
 export default function Dashboard() {
   const [token, setToken] = useState<string | null>(null);
   const [admin, setAdmin] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "orders" | "products" | "analytics" | "contacts" | "custom">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "orders" | "products" | "analytics" | "contacts" | "custom" | "settings">("overview");
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -413,8 +413,9 @@ export default function Dashboard() {
             { id: 'orders', label: 'Orders', icon: Package },
             { id: 'custom', label: 'Custom', icon: Sparkles },
             { id: 'contacts', label: 'Contacts', icon: Users },
-            { id: 'products', label: 'Products', icon: Settings },
+            { id: 'products', label: 'Products', icon: Package },
             { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+            { id: 'settings', label: 'Settings', icon: Settings },
           ].map(tab => (
             <button
               key={tab.id}
@@ -623,37 +624,67 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {products.map(product => (
-                <div 
-                  key={product.id} 
-                  className={`p-4 rounded-lg border transition-all ${product.active ? 'border-[#3D2B1F]/10' : 'border-red-200 opacity-60'}`}
-                  style={{ backgroundColor: '#F9F1F1' }}
-                  data-testid={`product-card-${product.id}`}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-display text-[#3D2B1F] truncate">{product.name}</h3>
-                      <p className="text-xs text-[#3D2B1F]/60 capitalize">{product.category}</p>
-                    </div>
-                    <button 
-                      onClick={() => { setEditingProduct(product); setShowProductModal(true); }}
-                      className="p-1 text-[#3D2B1F]/50 hover:text-[#3D2B1F]"
-                      data-testid={`edit-product-${product.id}`}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <p className="text-sm text-[#3D2B1F]/70 line-clamp-2 mb-2">{product.description}</p>
-                  <div className="flex justify-between items-center">
-                    <p className="font-display text-lg text-[#3D2B1F]">${product.price}</p>
-                    <span className={`text-xs px-2 py-1 rounded-full ${product.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                      {product.active ? 'Active' : 'Hidden'}
-                    </span>
+            {['truffles', 'cookies', 'seasonal', 'custom'].map(category => {
+              const categoryProducts = products.filter(p => {
+                const cat = p.category?.toLowerCase();
+                if (category === 'truffles') return cat === 'truffles' || cat === 'truffle';
+                if (category === 'cookies') return cat === 'cookies' || cat === 'cookie';
+                if (category === 'seasonal') return cat === 'seasonal';
+                if (category === 'custom') return cat === 'custom';
+                return false;
+              });
+              if (categoryProducts.length === 0) return null;
+              return (
+                <div key={category} className="mb-6">
+                  <h3 className="font-display text-lg text-[#3D2B1F] mb-3 capitalize flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
+                    {category === 'truffles' ? 'Truffles' : category === 'cookies' ? 'Cookies' : category === 'seasonal' ? 'Seasonal' : 'Custom Creations'}
+                    <span className="text-sm text-[#3D2B1F]/50 font-normal">({categoryProducts.length})</span>
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                    {categoryProducts.map(product => (
+                      <div 
+                        key={product.id} 
+                        className={`p-4 rounded-lg border transition-all ${product.active ? 'border-[#3D2B1F]/10' : 'border-red-200 opacity-60'}`}
+                        style={{ backgroundColor: '#F9F1F1' }}
+                        data-testid={`product-card-${product.id}`}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex items-start gap-3 min-w-0 flex-1">
+                            {product.image && (
+                              <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-[#3D2B1F]/10">
+                                <img src={product.image} alt={product.name} className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <h3 className="font-display text-[#3D2B1F] truncate">{product.name}</h3>
+                              <p className="text-xs text-[#3D2B1F]/60">Batch: {product.batch}</p>
+                            </div>
+                          </div>
+                          <button 
+                            onClick={() => { setEditingProduct(product); setShowProductModal(true); }}
+                            className="p-1 text-[#3D2B1F]/50 hover:text-[#3D2B1F]"
+                            data-testid={`edit-product-${product.id}`}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <p className="text-sm text-[#3D2B1F]/70 line-clamp-2 mb-2">{product.description}</p>
+                        <div className="flex justify-between items-center">
+                          <p className="font-display text-lg text-[#3D2B1F]">${product.price}</p>
+                          <div className="flex items-center gap-2">
+                            {product.trending && <span className="text-xs px-2 py-1 rounded-full bg-[#D4AF37]/20 text-[#D4AF37]">Trending</span>}
+                            <span className={`text-xs px-2 py-1 rounded-full ${product.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                              {product.active ? 'Active' : 'Hidden'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
         )}
 
@@ -762,7 +793,12 @@ export default function Dashboard() {
             orders={orders}
             token={token}
             onSelectOrder={(order) => { setSelectedOrder(order); setShowOrderModal(true); }}
+            onRefresh={() => fetchData(false)}
           />
+        )}
+
+        {activeTab === 'settings' && (
+          <SettingsSection token={token} />
         )}
       </div>
 
@@ -821,7 +857,25 @@ function OrderModal({ order, token, onClose, onStatusUpdate, onSendQuote, onCont
 }) {
   const [notes, setNotes] = useState(order.adminNotes || "");
   const [savingNotes, setSavingNotes] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const { toast } = useToast();
+
+  const deleteOrder = async () => {
+    if (!confirm("Are you sure you want to permanently delete this order? This cannot be undone.")) return;
+    setDeleting(true);
+    try {
+      await fetch(`/api/admin/orders/${order.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast({ title: "Order Deleted" });
+      onRefresh();
+      onClose();
+    } catch {
+      toast({ title: "Error", variant: "destructive" });
+    }
+    setDeleting(false);
+  };
 
   const saveNotes = async () => {
     setSavingNotes(true);
@@ -961,6 +1015,14 @@ function OrderModal({ order, token, onClose, onStatusUpdate, onSendQuote, onCont
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2">
+          <button
+            onClick={deleteOrder}
+            disabled={deleting}
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-red-100 text-red-700 hover:bg-red-200"
+            data-testid="button-delete-order"
+          >
+            <Trash2 className="w-4 h-4" /> {deleting ? "..." : "Delete"}
+          </button>
           <button
             onClick={onContact}
             className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-[#3D2B1F]/10 text-[#3D2B1F] hover:bg-[#3D2B1F]/20"
@@ -1177,6 +1239,7 @@ function ProductModal({ product, token, onClose, onSuccess }: {
   const [price, setPrice] = useState(product?.price.toString() || "");
   const [batch, setBatch] = useState(product?.batch.toString() || "1");
   const [category, setCategory] = useState(product?.category || "truffles");
+  const [image, setImage] = useState(product?.image || "");
   const [isCustom, setIsCustom] = useState(product?.isCustom || false);
   const [trending, setTrending] = useState(product?.trending || false);
   const [active, setActive] = useState(product?.active ?? true);
@@ -1195,7 +1258,7 @@ function ProductModal({ product, token, onClose, onSuccess }: {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           name, description, price: parseInt(price), batch: parseInt(batch),
-          category, isCustom, trending, active
+          category, image: image || null, isCustom, trending, active
         }),
       });
       if (res.ok) {
@@ -1303,6 +1366,23 @@ function ProductModal({ product, token, onClose, onSuccess }: {
               <option value="seasonal">Seasonal</option>
               <option value="custom">Custom Creations</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm text-[#3D2B1F]/70 mb-1">Image URL</label>
+            <input
+              type="text"
+              value={image}
+              onChange={(e) => setImage(e.target.value)}
+              placeholder="/product-image.jpg or https://..."
+              className="w-full px-4 py-2 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F]"
+              data-testid="input-product-image"
+            />
+            {image && (
+              <div className="mt-2 relative w-20 h-20 rounded-lg overflow-hidden border border-[#3D2B1F]/20">
+                <img src={image} alt="Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-4">
@@ -1612,10 +1692,11 @@ function CustomOrdersSection({ orders, token, onRefresh, onSelectOrder }: {
   );
 }
 
-function ContactsSection({ orders, token, onSelectOrder }: {
+function ContactsSection({ orders, token, onSelectOrder, onRefresh }: {
   orders: Order[];
   token: string;
   onSelectOrder: (order: Order) => void;
+  onRefresh: () => void;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showEmailModal, setShowEmailModal] = useState<{ email: string; name: string } | null>(null);
@@ -1809,6 +1890,143 @@ function ContactsSection({ orders, token, onSelectOrder }: {
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+function SettingsSection({ token }: { token: string }) {
+  const [settings, setSettings] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+
+  const defaultHeaders = {
+    heroTitle: "DIAMOND DULCERIA",
+    heroSubtitle: "Artisan Confections",
+    heroTagline: "Handcrafted truffles and signature cookies. Estd. 2025",
+    trufflesTitle: "Handcrafted Truffles",
+    cookiesTitle: "Signature Cookies",
+    seasonalTitle: "Seasonal Specials",
+    customTitle: "Custom Creation",
+    footerText: "Diamond Dulceria - Handcrafted with Love",
+  };
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const res = await fetch("/api/admin/settings", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSettings({ ...defaultHeaders, ...data.settings });
+      } else {
+        setSettings(defaultHeaders);
+      }
+    } catch {
+      setSettings(defaultHeaders);
+    }
+    setLoading(false);
+  };
+
+  const saveSettings = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ settings }),
+      });
+      if (res.ok) {
+        toast({ title: "Settings Saved", description: "Your changes are now live on the website." });
+      }
+    } catch {
+      toast({ title: "Error", description: "Failed to save settings", variant: "destructive" });
+    }
+    setSaving(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="text-center py-20">
+        <RefreshCw className="w-10 h-10 text-[#3D2B1F]/30 mx-auto animate-spin" />
+      </div>
+    );
+  }
+
+  const settingsGroups = [
+    {
+      title: "Hero Section",
+      fields: [
+        { key: "heroTitle", label: "Main Title" },
+        { key: "heroSubtitle", label: "Subtitle" },
+        { key: "heroTagline", label: "Tagline" },
+      ],
+    },
+    {
+      title: "Section Headers",
+      fields: [
+        { key: "trufflesTitle", label: "Truffles Section" },
+        { key: "cookiesTitle", label: "Cookies Section" },
+        { key: "seasonalTitle", label: "Seasonal Section" },
+        { key: "customTitle", label: "Custom Section" },
+      ],
+    },
+    {
+      title: "Footer",
+      fields: [
+        { key: "footerText", label: "Footer Text" },
+      ],
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-xl text-[#3D2B1F] flex items-center gap-2">
+          <Settings className="w-5 h-5" />
+          Site Settings
+        </h2>
+        <button
+          onClick={saveSettings}
+          disabled={saving}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-white disabled:opacity-50"
+          style={{ backgroundColor: '#3D2B1F' }}
+          data-testid="button-save-settings"
+        >
+          {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+          {saving ? "Saving..." : "Save Changes"}
+        </button>
+      </div>
+
+      {settingsGroups.map((group, idx) => (
+        <div key={idx} className="p-4 sm:p-6 rounded-lg border border-[#3D2B1F]/10" style={{ backgroundColor: '#F9F1F1' }}>
+          <h3 className="font-display text-lg text-[#3D2B1F] mb-4">{group.title}</h3>
+          <div className="space-y-4">
+            {group.fields.map(field => (
+              <div key={field.key}>
+                <label className="block text-sm text-[#3D2B1F]/70 mb-1">{field.label}</label>
+                <input
+                  type="text"
+                  value={settings[field.key] || ""}
+                  onChange={(e) => setSettings(prev => ({ ...prev, [field.key]: e.target.value }))}
+                  className="w-full px-4 py-2 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F]"
+                  data-testid={`input-setting-${field.key}`}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      <div className="p-4 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/30">
+        <p className="text-sm text-[#3D2B1F]">
+          <strong>Note:</strong> Changes will appear on the website immediately after saving.
+        </p>
+      </div>
     </div>
   );
 }
