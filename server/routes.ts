@@ -69,35 +69,46 @@ export async function registerRoutes(
     }
   });
 
-  // Create Stripe checkout session for order payment
+  // Create Stripe payment intent for embedded checkout
   app.post("/api/checkout/create-payment-intent", async (req, res) => {
     try {
-      const { orderId, items, customerEmail, customerName } = req.body;
+      const { items, customerEmail, customerName, customerPhone, deliveryAddress, specialInstructions } = req.body;
       
       if (!items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: "Items are required" });
       }
 
-      const total = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity * 100), 0);
+      const total = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
       
+      // Create order first
+      const order = await storage.createOrder({
+        customerName: customerName || '',
+        customerEmail: customerEmail || '',
+        customerPhone: customerPhone || '',
+        deliveryAddress: deliveryAddress || '',
+        specialInstructions: specialInstructions || null,
+        items: items,
+        total: total,
+      });
+
       const stripe = await getUncachableStripeClient();
 
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: total,
+        amount: total * 100, // Convert to cents
         currency: 'usd',
-        automatic_payment_methods: {
-          enabled: true,
-        },
+        payment_method_types: ['card', 'cashapp', 'link'],
         metadata: {
-          orderId: orderId || '',
+          orderId: order.id,
           customerEmail: customerEmail || '',
           customerName: customerName || '',
+          customerPhone: customerPhone || '',
         },
       });
 
       res.json({ 
         clientSecret: paymentIntent.client_secret,
-        paymentIntentId: paymentIntent.id 
+        paymentIntentId: paymentIntent.id,
+        orderId: order.id
       });
     } catch (error: any) {
       console.error("Error creating payment intent:", error);
