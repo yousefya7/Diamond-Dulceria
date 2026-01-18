@@ -3,6 +3,30 @@ import { Resend } from 'resend';
 const resend = new Resend(process.env.RESEND_API_KEY);
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'dymonlhf@gmail.com';
 
+export async function sendEmail(options: { to: string; subject: string; html: string }): Promise<boolean> {
+  if (!process.env.RESEND_API_KEY) {
+    console.log('Email skipped: API key not found');
+    return false;
+  }
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'Diamond Dulceria <orders@diamonddulceria.com>',
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+    });
+    if (error) {
+      console.error('Resend error:', error);
+      return false;
+    }
+    console.log('Email sent successfully:', data?.id);
+    return true;
+  } catch (error) {
+    console.error('Failed to send email:', error);
+    return false;
+  }
+}
+
 type OrderItem = {
   id: string;
   name: string;

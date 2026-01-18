@@ -4,11 +4,15 @@ import { storage } from "./storage";
 import { insertOrderSchema } from "@shared/schema";
 import { sendOrderNotification, sendCustomerConfirmation } from "./email";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
+import { registerAdminRoutes } from "./adminRoutes";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Register admin routes
+  registerAdminRoutes(app);
+
   // Create order endpoint
   app.post("/api/orders", async (req, res) => {
     try {
