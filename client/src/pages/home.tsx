@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingBag, Plus, Minus, X, Instagram, Sparkles, Send, Star, ChevronDown } from "lucide-react";
 
@@ -10,7 +10,19 @@ type CartItem = {
   customNotes?: string;
 };
 
-const products = [
+type Product = {
+  id: string;
+  name: string;
+  price: number;
+  batch: number;
+  description: string;
+  isCustom: boolean;
+  category: string;
+  image: string | null;
+  trending?: boolean;
+};
+
+const defaultProducts: Product[] = [
   { 
     id: "dubai-chocolate", 
     name: "Dubai Chocolate Truffles", 
@@ -127,11 +139,6 @@ const products = [
   },
 ];
 
-const truffles = products.filter(p => p.category === "truffle");
-const cookies = products.filter(p => p.category === "cookie");
-const seasonal = products.filter(p => p.category === "seasonal");
-const custom = products.filter(p => p.category === "custom");
-
 const reviews = [
   {
     id: 1,
@@ -187,6 +194,7 @@ const DiamondLogo = ({ className = "", gold = false }: { className?: string; gol
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>(defaultProducts);
   const [cart, setCart] = useState<CartItem[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('diamond-cart');
@@ -213,6 +221,24 @@ export default function Home() {
   const [customForm, setCustomForm] = useState({ dessertType: '', flavorRequest: '', eventDate: '' });
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'pickup' | 'card'>('pickup');
+
+  const truffles = useMemo(() => products.filter(p => p.category === "truffle" || p.category === "truffles"), [products]);
+  const cookies = useMemo(() => products.filter(p => p.category === "cookie" || p.category === "cookies"), [products]);
+  const seasonal = useMemo(() => products.filter(p => p.category === "seasonal"), [products]);
+  const custom = useMemo(() => products.filter(p => p.category === "custom"), [products]);
+
+  useEffect(() => {
+    fetch('/api/products')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.products && data.products.length > 0) {
+          setProducts(data.products);
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching products:', err);
+      });
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 2000);
