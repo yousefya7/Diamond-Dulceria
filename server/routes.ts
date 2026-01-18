@@ -110,6 +110,19 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Items are required" });
       }
 
+      const total = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+
+      // Create order first with "pending_payment" status
+      const order = await storage.createOrder({
+        customerName: customerName || '',
+        customerEmail: customerEmail || '',
+        customerPhone: customerPhone || '',
+        deliveryAddress: deliveryAddress || '',
+        specialInstructions: specialInstructions || null,
+        items: items,
+        total: total,
+      });
+
       const stripe = await getUncachableStripeClient();
       
       // Create line items for Stripe
@@ -137,22 +150,22 @@ export async function registerRoutes(
         cancel_url: `${baseUrl}/?payment=cancelled`,
         customer_email: customerEmail,
         metadata: {
+          orderId: order.id,
           customerName: customerName || '',
           customerPhone: customerPhone || '',
           deliveryAddress: deliveryAddress || '',
           specialInstructions: specialInstructions || '',
-          items: JSON.stringify(items),
         },
       });
 
-      res.json({ url: session.url, sessionId: session.id });
+      res.json({ url: session.url, sessionId: session.id, orderId: order.id });
     } catch (error: any) {
       console.error("Error creating checkout session:", error);
       res.status(500).json({ error: error.message || "Failed to create checkout" });
     }
   });
 
-  // Get checkout session status
+  // Get checkout session status (read-only - webhooks handle order updates/emails)
   app.get("/api/checkout/session/:sessionId", async (req, res) => {
     try {
       const { sessionId } = req.params;
@@ -160,10 +173,50 @@ export async function registerRoutes(
       
       const session = await stripe.checkout.sessions.retrieve(sessionId);
       
+      // For immediate frontend feedback, also update order if paid
+      // (Webhook may not have processed yet, this provides backup)
+      if (session.payment_status === 'paid' && session.metadata?.orderId) {
+        const orderId = session.metadata.orderId;
+        const order = await storage.getOrder(orderId);
+        
+        if (order && order.status === 'pending') {
+          await storage.updateOrderPayment(orderId, session.payment_intent as string, 'paid');
+          
+          // Send emails as backup (webhook should handle this, but in case it hasn't yet)
+          try {
+            await Promise.all([
+              sendOrderNotification({
+                id: order.id,
+                customerName: order.customerName,
+                customerEmail: order.customerEmail,
+                customerPhone: order.customerPhone,
+                deliveryAddress: order.deliveryAddress,
+                specialInstructions: order.specialInstructions,
+                items: order.items,
+                total: order.total,
+              }),
+              sendCustomerConfirmation({
+                id: order.id,
+                customerName: order.customerName,
+                customerEmail: order.customerEmail,
+                customerPhone: order.customerPhone,
+                deliveryAddress: order.deliveryAddress,
+                specialInstructions: order.specialInstructions,
+                items: order.items,
+                total: order.total,
+              }),
+            ]);
+          } catch (emailError) {
+            console.error("Email error:", emailError);
+          }
+        }
+      }
+      
       res.json({ 
         status: session.payment_status,
         customerEmail: session.customer_details?.email,
         amountTotal: session.amount_total,
+        orderId: session.metadata?.orderId,
       });
     } catch (error: any) {
       console.error("Error getting session:", error);

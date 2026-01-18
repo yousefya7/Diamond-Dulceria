@@ -211,10 +211,49 @@ export default function Home() {
   const [customModalOpen, setCustomModalOpen] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [customForm, setCustomForm] = useState({ dessertType: '', flavorRequest: '', eventDate: '' });
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'pickup' | 'card'>('pickup');
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 2000);
     return () => clearTimeout(timer);
+  }, []);
+
+  // Handle return from Stripe checkout
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const payment = urlParams.get('payment');
+    const sessionId = urlParams.get('session_id');
+    
+    if (payment === 'success' && sessionId) {
+      // Verify payment and trigger order confirmation
+      fetch(`/api/checkout/session/${sessionId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 'paid') {
+            setCart([]);
+            localStorage.removeItem('diamond-cart');
+            setPaymentMethod('card');
+            setOrderPlaced(true);
+            setCheckoutModalOpen(true);
+          } else {
+            alert('Payment verification pending. Please check your email for confirmation.');
+          }
+        })
+        .catch(err => {
+          console.error('Error verifying payment:', err);
+          setCart([]);
+          localStorage.removeItem('diamond-cart');
+          setPaymentMethod('card');
+          setOrderPlaced(true);
+          setCheckoutModalOpen(true);
+        });
+      // Clear URL params
+      window.history.replaceState({}, '', '/');
+    } else if (payment === 'cancelled') {
+      alert('Payment was cancelled. Your cart items are still saved.');
+      window.history.replaceState({}, '', '/');
+    }
   }, []);
 
   useEffect(() => {
@@ -246,6 +285,37 @@ export default function Home() {
     e.preventDefault();
     
     try {
+      setPaymentProcessing(true);
+      
+      if (paymentMethod === 'card') {
+        // Redirect to Stripe Checkout
+        const response = await fetch('/api/checkout/create-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            items: cart,
+            customerEmail: checkoutForm.email,
+            customerName: checkoutForm.name,
+            customerPhone: checkoutForm.phone,
+            deliveryAddress: `${checkoutForm.street}, ${checkoutForm.city}, ${checkoutForm.state} ${checkoutForm.zip}`,
+            specialInstructions: checkoutForm.notes || null,
+          }),
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to create checkout session');
+        }
+
+        // Redirect to Stripe
+        window.location.href = data.url;
+        return;
+      }
+      
+      // Pay on pickup flow
       const orderData = {
         customerName: checkoutForm.name,
         customerEmail: checkoutForm.email,
@@ -276,12 +346,15 @@ export default function Home() {
       setTimeout(() => {
         setCheckoutModalOpen(false);
         setOrderPlaced(false);
-        setCart([]); // Clear cart after order
+        setCart([]);
         setCheckoutForm({ name: '', email: '', phone: '', street: '', city: '', state: '', zip: '', notes: '' });
+        setPaymentMethod('pickup');
       }, 3000);
     } catch (error: any) {
       console.error('Error submitting order:', error);
       alert(`Failed to submit order: ${error.message || 'Please try again.'}`);
+    } finally {
+      setPaymentProcessing(false);
     }
   };
 
@@ -1097,31 +1170,80 @@ export default function Home() {
                     <div className="w-20 h-20 bg-[#D4AF37]/10 rounded-full flex items-center justify-center mb-6">
                       <Sparkles className="w-10 h-10 text-[#D4AF37]" />
                     </div>
-                    <h4 className="font-display text-2xl text-[#3D2B1F] mb-3 tracking-wide">Order Received!</h4>
+                    <h4 className="font-display text-2xl text-[#3D2B1F] mb-3 tracking-wide">
+                      {paymentMethod === 'card' || !checkoutForm.name ? 'Payment Successful!' : 'Order Received!'}
+                    </h4>
                     <p className="text-[#3D2B1F]/60 mb-4">
-                      Thank you for your order, {checkoutForm.name.split(' ')[0]}!<br/>
-                      We'll contact you shortly when your order is ready for pickup.
+                      {paymentMethod === 'card' || !checkoutForm.name ? (
+                        <>Thank you for your payment!<br/>We'll contact you shortly when your order is ready for pickup.</>
+                      ) : (
+                        <>Thank you for your order, {checkoutForm.name.split(' ')[0]}!<br/>We'll contact you shortly when your order is ready for pickup.</>
+                      )}
                     </p>
-                    <div className="p-4 bg-[#3D2B1F]/5 rounded-lg border border-[#3D2B1F]/10 mb-4">
-                      <p className="text-[#3D2B1F]/80 text-sm font-medium">Payment Due on Pickup: ${subtotal}</p>
-                    </div>
-                    <div className="p-4 bg-[#D4AF37]/10 rounded-lg border border-[#D4AF37]/30 text-left">
-                      <p className="text-[#3D2B1F] text-xs font-medium mb-2 uppercase tracking-wide">📋 Save Your Order Details:</p>
-                      <p className="text-[#3D2B1F]/70 text-sm">
-                        <strong>Name:</strong> {checkoutForm.name}<br/>
-                        <strong>Phone:</strong> {checkoutForm.phone}<br/>
-                        <strong>Total:</strong> ${subtotal} (pay on pickup)
-                      </p>
-                    </div>
+                    {paymentMethod !== 'card' && checkoutForm.name && (
+                      <>
+                        <div className="p-4 bg-[#3D2B1F]/5 rounded-lg border border-[#3D2B1F]/10 mb-4">
+                          <p className="text-[#3D2B1F]/80 text-sm font-medium">Payment Due on Pickup: ${subtotal}</p>
+                        </div>
+                        <div className="p-4 bg-[#D4AF37]/10 rounded-lg border border-[#D4AF37]/30 text-left">
+                          <p className="text-[#3D2B1F] text-xs font-medium mb-2 uppercase tracking-wide">📋 Save Your Order Details:</p>
+                          <p className="text-[#3D2B1F]/70 text-sm">
+                            <strong>Name:</strong> {checkoutForm.name}<br/>
+                            <strong>Phone:</strong> {checkoutForm.phone}<br/>
+                            <strong>Total:</strong> ${subtotal} (pay on pickup)
+                          </p>
+                        </div>
+                      </>
+                    )}
+                    <button
+                      onClick={() => {
+                        setCheckoutModalOpen(false);
+                        setOrderPlaced(false);
+                        setCheckoutForm({ name: '', email: '', phone: '', street: '', city: '', state: '', zip: '', notes: '' });
+                        setPaymentMethod('pickup');
+                      }}
+                      className="mt-6 px-8 py-3 bg-[#3D2B1F] text-[#F9F1F1] font-display tracking-wide rounded-full hover:bg-[#2a1e15] transition-colors"
+                    >
+                      CONTINUE SHOPPING
+                    </button>
                   </div>
                 ) : (
                   <form onSubmit={handleCheckoutSubmit} className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-5">
-                    <div className="bg-[#D4AF37]/10 p-4 rounded-lg border border-[#D4AF37]/20 flex items-start gap-3">
-                      <div className="mt-1"><Sparkles className="w-4 h-4 text-[#D4AF37]" /></div>
-                      <div>
-                        <h5 className="text-[#3D2B1F] font-display text-sm tracking-wide mb-1">Pay on Delivery</h5>
-                        <p className="text-[#3D2B1F]/70 text-xs">Payment will be collected upon delivery of your confections.</p>
+                    <div className="space-y-3">
+                      <h5 className="text-[#3D2B1F] font-display text-sm tracking-wide">Choose Payment Method</h5>
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('pickup')}
+                          className={`p-4 rounded-lg border-2 transition-all ${
+                            paymentMethod === 'pickup'
+                              ? 'border-[#D4AF37] bg-[#D4AF37]/10'
+                              : 'border-[#3D2B1F]/20 bg-white hover:border-[#3D2B1F]/40'
+                          }`}
+                        >
+                          <Sparkles className={`w-5 h-5 mx-auto mb-2 ${paymentMethod === 'pickup' ? 'text-[#D4AF37]' : 'text-[#3D2B1F]/40'}`} />
+                          <p className={`text-sm font-display tracking-wide ${paymentMethod === 'pickup' ? 'text-[#3D2B1F]' : 'text-[#3D2B1F]/60'}`}>Pay on Pickup</p>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('card')}
+                          className={`p-4 rounded-lg border-2 transition-all ${
+                            paymentMethod === 'card'
+                              ? 'border-[#D4AF37] bg-[#D4AF37]/10'
+                              : 'border-[#3D2B1F]/20 bg-white hover:border-[#3D2B1F]/40'
+                          }`}
+                        >
+                          <svg className={`w-5 h-5 mx-auto mb-2 ${paymentMethod === 'card' ? 'text-[#D4AF37]' : 'text-[#3D2B1F]/40'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                          </svg>
+                          <p className={`text-sm font-display tracking-wide ${paymentMethod === 'card' ? 'text-[#3D2B1F]' : 'text-[#3D2B1F]/60'}`}>Pay with Card</p>
+                        </button>
                       </div>
+                      <p className="text-[#3D2B1F]/60 text-xs text-center">
+                        {paymentMethod === 'pickup' 
+                          ? 'Payment will be collected when you pick up your order.' 
+                          : 'Pay securely now with your credit or debit card.'}
+                      </p>
                     </div>
 
                     <div>
@@ -1248,10 +1370,16 @@ export default function Home() {
                       </div>
                       <button
                         type="submit"
-                        className="w-full py-4 bg-[#3D2B1F] hover:bg-[#2a1e15] text-[#F9F1F1] text-lg font-display tracking-[0.15em] rounded-full transition-all duration-300 active:scale-[0.98]"
+                        disabled={paymentProcessing}
+                        className="w-full py-4 bg-[#3D2B1F] hover:bg-[#2a1e15] text-[#F9F1F1] text-lg font-display tracking-[0.15em] rounded-full transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        CONFIRM ORDER
+                        {paymentProcessing ? 'PROCESSING...' : paymentMethod === 'card' ? 'PAY NOW' : 'CONFIRM ORDER'}
                       </button>
+                      {paymentMethod === 'card' && (
+                        <p className="text-[#3D2B1F]/50 text-xs text-center mt-3">
+                          Secure payment powered by Stripe
+                        </p>
+                      )}
                     </div>
                   </form>
                 )}
