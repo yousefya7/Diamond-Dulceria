@@ -59,10 +59,18 @@ The email notification system uses Resend for sending beautiful HTML emails:
 
 ## Dynamic Content System
 - **Categories table** stores navigation items and section headers
+- **Settings table** stores hero text, site title, and footer text
 - **Navbar** automatically generated from categories in database
 - **Section headers** (titles and descriptions) pulled from categories
+- **Hero section** uses settings for title, subtitle, tagline, and description
 - Changes in Admin Dashboard → Categories tab reflect instantly on live site
+- Changes in Admin Dashboard → Settings tab reflect instantly on live site
 - "Import Default" button seeds default categories (Truffles, Cookies, Seasonal, Custom)
+
+### Important: Initial Setup
+- Admin must click "Import Default" in Categories tab to seed initial categories
+- Products have a `category` field (singular: "truffle", "cookie", etc.)
+- Category slugs (plural: "truffles", "cookies", etc.) are matched automatically
 
 ## Recent Changes (Jan 2026)
 - Dynamic categories system for navbar and section headers

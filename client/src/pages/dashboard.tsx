@@ -2289,15 +2289,13 @@ function SettingsSection({ token }: { token: string }) {
   const defaultHeaders = {
     heroTitle: "DIAMOND DULCERIA",
     heroSubtitle: "Artisan Confections",
-    heroTagline: "Handcrafted truffles and signature cookies. Estd. 2025",
-    trufflesTitle: "Handcrafted Truffles",
-    cookiesTitle: "Signature Cookies",
-    seasonalTitle: "Seasonal Specials",
-    customTitle: "Custom Creation",
+    heroTagline: "The Art of the Sweet Treat",
+    heroDescription: "Handcrafted truffles and signature cookies, made with passion and the finest ingredients.",
+    establishedYear: "ESTD. 2025",
     footerText: "Diamond Dulceria - Handcrafted with Love",
   };
 
-  const defaultSectionKeys = ['trufflesTitle', 'cookiesTitle', 'seasonalTitle', 'customTitle'];
+  const defaultSectionKeys: string[] = [];
 
   useEffect(() => {
     fetchSettings();
@@ -2399,17 +2397,15 @@ function SettingsSection({ token }: { token: string }) {
   }
 
   const heroFields = [
-    { key: "heroTitle", label: "Main Title" },
-    { key: "heroSubtitle", label: "Subtitle" },
-    { key: "heroTagline", label: "Tagline" },
+    { key: "heroTitle", label: "Site Title" },
+    { key: "heroSubtitle", label: "Hero Subtitle" },
+    { key: "heroTagline", label: "Hero Tagline" },
+    { key: "heroDescription", label: "Hero Description" },
+    { key: "establishedYear", label: "Established Year" },
+    { key: "footerText", label: "Footer Text" },
   ];
 
-  const defaultSectionFields = [
-    { key: "trufflesTitle", label: "Truffles Section" },
-    { key: "cookiesTitle", label: "Cookies Section" },
-    { key: "seasonalTitle", label: "Seasonal Section" },
-    { key: "customTitle", label: "Custom Section" },
-  ].filter(f => settings[f.key] !== undefined);
+  const defaultSectionFields: { key: string; label: string }[] = [];
 
   return (
     <div className="space-y-6">

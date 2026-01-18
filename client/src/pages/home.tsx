@@ -252,6 +252,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>(defaultProducts);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
   const [cart, setCart] = useState<CartItem[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('diamond-cart');
@@ -336,6 +337,17 @@ export default function Home() {
       })
       .catch(err => {
         console.error('Error fetching categories:', err);
+      });
+
+    fetch('/api/settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.settings) {
+          setSiteSettings(data.settings);
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching settings:', err);
       });
   }, []);
 
@@ -645,7 +657,7 @@ export default function Home() {
                 className="font-display text-xl sm:text-2xl mt-8"
                 style={{ color: '#D4AF37' }}
               >
-                DIAMOND DULCERIA
+                {siteSettings.heroTitle || 'DIAMOND DULCERIA'}
               </motion.h1>
 
               <motion.p
@@ -654,7 +666,7 @@ export default function Home() {
                 transition={{ duration: 0.8, delay: 0.8 }}
                 className="text-[#D4AF37]/50 text-xs tracking-[0.3em] mt-3"
               >
-                ESTD. 2025
+                {siteSettings.establishedYear || 'ESTD. 2025'}
               </motion.p>
             </motion.div>
           </>
@@ -676,8 +688,8 @@ export default function Home() {
               <div className="flex items-center gap-3">
                 <DiamondLogo className="w-8 h-8 sm:w-10 sm:h-10 text-[#F4C2C2]" />
                 <div className="text-center">
-                  <h1 className="font-display text-lg sm:text-xl text-[#F4C2C2] tracking-[0.15em]">DIAMOND DULCERIA</h1>
-                  <p className="text-[#F4C2C2]/60 text-[10px] tracking-[0.25em]">ESTD. 2025</p>
+                  <h1 className="font-display text-lg sm:text-xl text-[#F4C2C2] tracking-[0.15em]">{siteSettings.heroTitle || 'DIAMOND DULCERIA'}</h1>
+                  <p className="text-[#F4C2C2]/60 text-[10px] tracking-[0.25em]">{siteSettings.establishedYear || 'ESTD. 2025'}</p>
                 </div>
               </div>
               
@@ -825,14 +837,14 @@ export default function Home() {
               
               {/* Brand Tagline */}
               <p className="text-[#D4AF37] text-sm sm:text-base tracking-[0.3em] uppercase mb-4 font-light italic">
-                The Art of the Sweet Treat
+                {siteSettings.heroTagline || 'The Art of the Sweet Treat'}
               </p>
               
               <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl text-[#3D2B1F] leading-tight mb-6 tracking-wide">
-                Artisan Confections
+                {siteSettings.heroSubtitle || 'Artisan Confections'}
               </h2>
               <p className="text-[#3D2B1F]/70 text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
-                Handcrafted truffles and signature cookies, made with passion and the finest ingredients.
+                {siteSettings.heroDescription || 'Handcrafted truffles and signature cookies, made with passion and the finest ingredients.'}
               </p>
               <button 
                 onClick={() => document.getElementById(firstCategorySlug)?.scrollIntoView({ behavior: 'smooth' })}
@@ -1040,8 +1052,8 @@ export default function Home() {
         <footer className="py-16 sm:py-20 px-4" style={{ backgroundColor: '#3D2B1F' }}>
           <div className="max-w-6xl mx-auto text-center">
             <DiamondLogo className="w-12 h-12 text-[#F4C2C2] mx-auto mb-6" />
-            <h3 className="font-display text-2xl sm:text-3xl text-[#F4C2C2] tracking-[0.2em] mb-2">DIAMOND DULCERIA</h3>
-            <p className="font-display text-[#F4C2C2]/40 text-xs tracking-[0.3em] mb-8 italic">Estd. 2025</p>
+            <h3 className="font-display text-2xl sm:text-3xl text-[#F4C2C2] tracking-[0.2em] mb-2">{siteSettings.heroTitle || 'DIAMOND DULCERIA'}</h3>
+            <p className="font-display text-[#F4C2C2]/40 text-xs tracking-[0.3em] mb-8 italic">{siteSettings.establishedYear || 'Estd. 2025'}</p>
             
             <div className="flex justify-center gap-4 mb-10">
               <a href="https://www.instagram.com/diamonddulceria/" target="_blank" rel="noopener noreferrer" className="p-4 border border-[#F4C2C2]/30 text-[#F4C2C2] hover:bg-[#F4C2C2] hover:text-[#3D2B1F] rounded-full transition-all duration-300" data-testid="link-instagram">
