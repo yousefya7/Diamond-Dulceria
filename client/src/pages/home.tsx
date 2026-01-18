@@ -175,11 +175,15 @@ const DiamondStar = ({ className = "" }: { className?: string }) => (
 function PaymentForm({ 
   onSuccess, 
   onError,
-  customerName 
+  customerName,
+  orderId,
+  paymentIntentId
 }: { 
   onSuccess: () => void; 
   onError: (msg: string) => void;
   customerName: string;
+  orderId: string;
+  paymentIntentId: string;
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -209,6 +213,21 @@ function PaymentForm({
       onError(error.message || 'Payment failed');
       setIsProcessing(false);
     } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+      // Confirm payment on server and update order status
+      try {
+        const response = await fetch('/api/checkout/confirm-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId, paymentIntentId: paymentIntent.id }),
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to confirm payment on server');
+        }
+      } catch (err) {
+        console.error('Error confirming payment:', err);
+      }
+      
       onSuccess();
     } else {
       setIsProcessing(false);
@@ -306,6 +325,7 @@ export default function Home() {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+  const [currentPaymentIntentId, setCurrentPaymentIntentId] = useState<string | null>(null);
 
   const truffles = useMemo(() => products.filter(p => p.category === "truffle" || p.category === "truffles"), [products]);
   const cookies = useMemo(() => products.filter(p => p.category === "cookie" || p.category === "cookies"), [products]);
@@ -436,6 +456,7 @@ export default function Home() {
         // Set client secret and show payment form
         setClientSecret(data.clientSecret);
         setCurrentOrderId(data.orderId);
+        setCurrentPaymentIntentId(data.paymentIntentId);
         setShowPaymentForm(true);
         setPaymentProcessing(false);
         return;
@@ -1367,11 +1388,14 @@ export default function Home() {
                     >
                       <PaymentForm 
                         customerName={checkoutForm.name}
+                        orderId={currentOrderId!}
+                        paymentIntentId={currentPaymentIntentId!}
                         onSuccess={() => {
                           setCart([]);
                           localStorage.removeItem('diamond-cart');
                           setShowPaymentForm(false);
                           setClientSecret(null);
+                          setCurrentPaymentIntentId(null);
                           setOrderPlaced(true);
                         }}
                         onError={(msg) => {

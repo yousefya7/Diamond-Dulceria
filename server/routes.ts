@@ -78,7 +78,31 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Items are required" });
       }
 
-      const total = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+      if (!customerName || !customerEmail) {
+        return res.status(400).json({ error: "Customer name and email are required" });
+      }
+
+      // Validate prices server-side from database
+      const dbProducts = await storage.getAllProducts();
+      const productPriceMap = new Map(dbProducts.map(p => [p.id, p.price]));
+      
+      let total = 0;
+      const validatedItems = [];
+      
+      for (const item of items) {
+        if (!item.id || typeof item.quantity !== 'number' || item.quantity < 1) {
+          return res.status(400).json({ error: "Invalid item data" });
+        }
+        
+        const dbPrice = productPriceMap.get(item.id);
+        if (dbPrice === undefined) {
+          return res.status(400).json({ error: `Product not found: ${item.id}` });
+        }
+        
+        const price = parseFloat(dbPrice);
+        total += price * item.quantity;
+        validatedItems.push({ ...item, price });
+      }
       
       // Create order first
       const order = await storage.createOrder({
@@ -87,14 +111,14 @@ export async function registerRoutes(
         customerPhone: customerPhone || '',
         deliveryAddress: deliveryAddress || '',
         specialInstructions: specialInstructions || null,
-        items: items,
+        items: validatedItems,
         total: total,
       });
 
       const stripe = await getUncachableStripeClient();
 
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: total * 100, // Convert to cents
+        amount: Math.round(total * 100), // Convert to cents
         currency: 'usd',
         payment_method_types: ['card', 'cashapp', 'link'],
         metadata: {
@@ -116,7 +140,65 @@ export async function registerRoutes(
     }
   });
 
-  // Create full Stripe checkout session
+  // Confirm payment and update order status
+  app.post("/api/checkout/confirm-payment", async (req, res) => {
+    try {
+      const { orderId, paymentIntentId } = req.body;
+      
+      if (!orderId || !paymentIntentId) {
+        return res.status(400).json({ error: "Order ID and Payment Intent ID are required" });
+      }
+
+      const stripe = await getUncachableStripeClient();
+      
+      // Verify payment was successful
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      
+      if (paymentIntent.status !== 'succeeded') {
+        return res.status(400).json({ error: "Payment not yet completed" });
+      }
+      
+      // Verify orderId matches payment intent metadata
+      if (paymentIntent.metadata?.orderId !== orderId) {
+        return res.status(400).json({ error: "Order ID mismatch" });
+      }
+
+      // Update order status to paid
+      const order = await storage.updateOrderStatus(orderId, 'paid');
+      
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      // Send confirmation emails
+      const orderData = {
+        id: order.id,
+        customerName: order.customerName,
+        customerEmail: order.customerEmail,
+        customerPhone: order.customerPhone,
+        deliveryAddress: order.deliveryAddress,
+        specialInstructions: order.specialInstructions,
+        items: order.items,
+        total: order.total,
+      };
+      
+      try {
+        await Promise.all([
+          sendOrderNotification(orderData),
+          sendCustomerConfirmation(orderData),
+        ]);
+      } catch (emailError) {
+        console.error("Email error:", emailError);
+      }
+
+      res.json({ success: true, order });
+    } catch (error: any) {
+      console.error("Error confirming payment:", error);
+      res.status(500).json({ error: error.message || "Failed to confirm payment" });
+    }
+  });
+
+  // Create full Stripe checkout session (legacy - kept for compatibility)
   app.post("/api/checkout/create-session", async (req, res) => {
     try {
       const { items, customerEmail, customerName, customerPhone, deliveryAddress, specialInstructions } = req.body;
@@ -125,7 +207,27 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Items are required" });
       }
 
-      const total = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+      // Validate prices server-side from database
+      const dbProducts = await storage.getAllProducts();
+      const productPriceMap = new Map(dbProducts.map(p => [p.id, p.price]));
+      
+      let total = 0;
+      const validatedItems = [];
+      
+      for (const item of items) {
+        if (!item.id || typeof item.quantity !== 'number' || item.quantity < 1) {
+          return res.status(400).json({ error: "Invalid item data" });
+        }
+        
+        const dbPrice = productPriceMap.get(item.id);
+        if (dbPrice === undefined) {
+          return res.status(400).json({ error: `Product not found: ${item.id}` });
+        }
+        
+        const price = parseFloat(dbPrice);
+        total += price * item.quantity;
+        validatedItems.push({ ...item, price });
+      }
 
       // Create order first with "pending_payment" status
       const order = await storage.createOrder({
@@ -134,21 +236,21 @@ export async function registerRoutes(
         customerPhone: customerPhone || '',
         deliveryAddress: deliveryAddress || '',
         specialInstructions: specialInstructions || null,
-        items: items,
+        items: validatedItems,
         total: total,
       });
 
       const stripe = await getUncachableStripeClient();
       
-      // Create line items for Stripe
-      const lineItems = items.map((item: any) => ({
+      // Create line items for Stripe using validated prices
+      const lineItems = validatedItems.map((item: any) => ({
         price_data: {
           currency: 'usd',
           product_data: {
             name: item.name,
             description: item.customNotes || undefined,
           },
-          unit_amount: item.price * 100,
+          unit_amount: Math.round(item.price * 100),
         },
         quantity: item.quantity,
       }));
