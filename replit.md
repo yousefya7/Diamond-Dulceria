@@ -4,45 +4,63 @@ A luxury, mobile-first e-commerce website for Diamond Dulceria (Estd. 2025), a p
 
 ## Overview
 - **Purpose:** Online ordering system for artisan confections
-- **Payment:** Pay on Delivery
+- **Payment:** Pay on Pickup + Stripe online payment
 - **Design:** Deep Cocoa Brown (#3D2B1F) and Soft Rose Pink (#F4C2C2)
 
 ## Features
 - Split-screen entrance animation
-- Product catalog with 7 items
+- Dynamic product catalog (loaded from database)
 - Online checkout with order form
-- Admin dashboard at `/admin` route
-- Email notification system (configured but needs SMTP for production)
+- Stripe payment integration
+- Admin CRM dashboard at `/dashboard` route
+- Status change email notifications to customers
+- Email notification system via Resend API
 
 ## Architecture
 - **Frontend:** React + Vite + Tailwind CSS + Framer Motion
 - **Backend:** Express.js
 - **Database:** PostgreSQL with Drizzle ORM
+- **Email:** Resend API
 
 ## Key Routes
-- `/` - Main store page
-- `/admin` - Order dashboard (shows all orders, revenue stats, customer info)
+- `/` - Main store page (products dynamically loaded from database)
+- `/dashboard` - Admin CRM dashboard
+
+## Admin Dashboard Features
+- Order management (view, update status, add notes)
+- Product management (add, edit, delete products)
+- Customer contacts (view all customers, email directly)
+- Custom orders (approve/decline, send quotes)
+- Analytics (revenue graphs, order status, category breakdown)
+- 15-second auto-sync with new order popup alerts
 
 ## Environment Variables
 - `DATABASE_URL` - PostgreSQL connection string
-- `OWNER_EMAIL` - Business owner email for order notifications (yousefasmar2005@gmail.com)
+- `ADMIN_EMAIL` - Admin login email (dymonlhf@gmail.com)
+- `ADMIN_PASSWORD` - Admin login password
+- `RESEND_API_KEY` - Resend API key for email notifications
 
 ## Email Notifications
 The email notification system uses Resend for sending beautiful HTML emails:
-- Order notifications are sent to OWNER_EMAIL (yousefasmar2005@gmail.com)
-- Uses RESEND_API_KEY secret for authentication
-- Emails include order details, customer info, and delivery address
-- All orders are also visible in the `/admin` dashboard
+- Order confirmation sent to customers
+- Order notifications sent to admin
+- **Status change emails** - Customers receive an email whenever their order status changes (Pending, Paid, Ready, Completed, Cancelled)
+- Pickup instructions included in "Ready for Pickup" emails
+- All orders visible in `/dashboard`
 
-## Recent Changes
-- Full-stack upgrade with PostgreSQL database
-- Order submission and storage system
-- Admin dashboard with real-time order viewing
-- Email notification via Resend API
-- Pickup notice added to cart drawer and checkout modal
-- Fixed View Collection button to scroll to products
-- Bespoke Creation can now be added to cart as $0 item with custom notes
-- Custom notes displayed in cart, admin dashboard, and email notifications
+## Product Sync
+- Products are stored in PostgreSQL database
+- Main website fetches products from `/api/products` endpoint
+- Dashboard can add/edit/delete products in real-time
+- "Import Products" button seeds default products into database
+- Changes in dashboard instantly reflect on the live website
+
+## Recent Changes (Jan 2026)
+- Dynamic product loading from database to main site
+- Status change email notifications to customers
+- Seed products endpoint for initial setup
+- Import Products button in dashboard
+- Admin authentication via environment variables
 
 ## User Preferences
 - Luxury aesthetic with gold accents (#D4AF37)

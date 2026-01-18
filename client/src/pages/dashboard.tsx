@@ -574,14 +574,53 @@ export default function Dashboard() {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="font-display text-lg sm:text-xl text-[#3D2B1F]">Products ({products.length})</h2>
-              <button
-                onClick={() => { setEditingProduct(null); setShowProductModal(true); }}
-                className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-white text-sm"
-                style={{ backgroundColor: '#3D2B1F' }}
-                data-testid="button-add-product"
-              >
-                <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Add Product</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={async () => {
+                    if (!confirm('Import default products into the database? This will add any missing products.')) return;
+                    try {
+                      const res = await fetch('/api/admin/seed-products', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                      });
+                      const data = await res.json();
+                      if (data.success) {
+                        toast({
+                          title: 'Products Imported',
+                          description: `Imported ${data.imported} products, skipped ${data.skipped} existing.`
+                        });
+                        fetchData();
+                      } else {
+                        toast({
+                          title: 'Import Failed',
+                          description: data.error || 'Failed to import products',
+                          variant: 'destructive'
+                        });
+                      }
+                    } catch (err) {
+                      console.error('Seed error:', err);
+                      toast({
+                        title: 'Import Failed',
+                        description: 'Network error while importing products',
+                        variant: 'destructive'
+                      });
+                    }
+                  }}
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-white text-sm"
+                  style={{ backgroundColor: '#D4AF37' }}
+                  data-testid="button-seed-products"
+                >
+                  <RefreshCw className="w-4 h-4" /> <span className="hidden sm:inline">Import Products</span>
+                </button>
+                <button
+                  onClick={() => { setEditingProduct(null); setShowProductModal(true); }}
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-white text-sm"
+                  style={{ backgroundColor: '#3D2B1F' }}
+                  data-testid="button-add-product"
+                >
+                  <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Add Product</span>
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">

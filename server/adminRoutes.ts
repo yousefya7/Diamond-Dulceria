@@ -2,7 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { storage } from "./storage";
 import { insertProductSchema } from "@shared/schema";
 import bcrypt from "bcryptjs";
-import { sendEmail } from "./email";
+import { sendEmail, sendStatusChangeEmail } from "./email";
 
 const ADMIN_SESSION_SECRET = process.env.ADMIN_SESSION_SECRET || "diamond-dulceria-admin-2024";
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "dymonlhf@gmail.com";
@@ -108,6 +108,16 @@ export function registerAdminRoutes(app: Express) {
       if (!order) {
         return res.status(404).json({ error: "Order not found" });
       }
+      
+      // Send status change email to customer
+      sendStatusChangeEmail({
+        id: order.id,
+        customerName: order.customerName,
+        customerEmail: order.customerEmail,
+        status: order.status,
+        total: order.total
+      }).catch(err => console.error("Failed to send status email:", err));
+      
       res.json({ success: true, order });
     } catch (error: any) {
       console.error("Error updating order status:", error);
@@ -296,6 +306,170 @@ export function registerAdminRoutes(app: Express) {
     } catch (error: any) {
       console.error("Error fetching public products:", error);
       res.status(500).json({ error: "Failed to fetch products" });
+    }
+  });
+
+  // Seed products endpoint - imports default products into the database
+  app.post("/api/admin/seed-products", verifyAdminAuth, async (req, res) => {
+    try {
+      const defaultProducts = [
+        { 
+          id: "dubai-chocolate", 
+          name: "Dubai Chocolate Truffles", 
+          price: 50, 
+          batch: 25,
+          description: "A rich pistachio cream filling, coated in silky milk chocolate and topped with a pistachio crunch and drizzle.",
+          isCustom: false,
+          category: "truffle",
+          image: "/dubai_chocolate.png",
+          trending: true,
+          active: true
+        },
+        { 
+          id: "cookie-butter", 
+          name: "Cookie Butter Truffles", 
+          price: 50, 
+          batch: 25,
+          description: "Spiced cookie filling wrapped in smooth white chocolate, finished with Biscoff crumb topping.",
+          isCustom: false,
+          category: "truffle",
+          image: "/cookie_butter.png",
+          trending: false,
+          active: true
+        },
+        { 
+          id: "strawberry-shortcake", 
+          name: "Strawberry Shortcake Truffles", 
+          price: 50, 
+          batch: 25,
+          description: "A rich strawberry-infused cheesecake filling enrobed in smooth pink white chocolate topped with a strawberry crumble.",
+          isCustom: false,
+          category: "truffle",
+          image: "/strawberry_shortcake.png",
+          trending: false,
+          active: true
+        },
+        { 
+          id: "cookies-cream", 
+          name: "Cookies & Cream Truffles", 
+          price: 50, 
+          batch: 25,
+          description: "Classic cookies & cream filling enrobed in milk chocolate, finished with a white chocolate drizzle and Oreo crumble.",
+          isCustom: false,
+          category: "truffle",
+          image: "/cookies_cream.png",
+          trending: false,
+          active: true
+        },
+        { 
+          id: "red-velvet", 
+          name: "Red Velvet Cookies", 
+          price: 50, 
+          batch: 25,
+          description: "Deep red cocoa base mixed with white chocolate chips, crushed Oreo cookies, and a smooth cream cheese swirl.",
+          isCustom: false,
+          category: "cookie",
+          image: "/red_velvet.png",
+          trending: false,
+          active: true
+        },
+        { 
+          id: "snickerdoodle", 
+          name: "Snickerdoodle Cookies", 
+          price: 50, 
+          batch: 25,
+          description: "Classic cinnamon-sugar dusting with soft, chewy center",
+          isCustom: false,
+          category: "cookie",
+          image: "/snickerdoodle.png",
+          trending: false,
+          active: true
+        },
+        { 
+          id: "signature-cookies", 
+          name: "Signature Cookies", 
+          price: 50, 
+          batch: 25,
+          description: "Our signature brown butter cookies with premium chocolate and sea salt",
+          isCustom: false,
+          category: "cookie",
+          image: "/signature_cookies.png",
+          trending: false,
+          active: true
+        },
+        { 
+          id: "chocolate-strawberries", 
+          name: "Chocolate Covered Strawberries", 
+          price: 50, 
+          batch: 12,
+          description: "Fresh strawberries dipped in rich chocolate with elegant drizzle and toppings.",
+          isCustom: false,
+          category: "seasonal",
+          image: "/strawberries.jpg",
+          trending: true,
+          active: true
+        },
+        { 
+          id: "pink-chocolate-cookies", 
+          name: "Pink Chocolate Cookies", 
+          price: 50, 
+          batch: 25,
+          description: "Soft-baked cookies with pink white chocolate chips and a touch of strawberry.",
+          isCustom: false,
+          category: "seasonal",
+          image: "/pink-cookies.jpg",
+          trending: true,
+          active: true
+        },
+        { 
+          id: "strawberry-truffles", 
+          name: "Strawberry Truffles", 
+          price: 50, 
+          batch: 25,
+          description: "Strawberry center with milk chocolate on the outside.",
+          isCustom: false,
+          category: "seasonal",
+          image: "/strawberry-truffle.jpg",
+          trending: true,
+          active: true
+        },
+        { 
+          id: "bespoke-diamond", 
+          name: "Bespoke Creation", 
+          price: 0, 
+          batch: 0,
+          description: "Custom flavors crafted exclusively for you. Subject to approval.",
+          isCustom: true,
+          category: "custom",
+          image: "/bespoke_creation.png",
+          trending: false,
+          active: true
+        },
+      ];
+
+      let imported = 0;
+      let skipped = 0;
+      
+      for (const product of defaultProducts) {
+        const existing = await storage.getProduct(product.id);
+        if (!existing) {
+          const { id, ...productData } = product;
+          await storage.createProductWithId(id, productData);
+          imported++;
+        } else {
+          skipped++;
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        message: `Imported ${imported} products, skipped ${skipped} existing products`,
+        imported,
+        skipped
+      });
+    } catch (error: any) {
+      console.error("Error seeding products:", error);
+      res.status(500).json({ error: "Failed to seed products" });
     }
   });
 }

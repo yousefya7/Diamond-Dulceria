@@ -300,3 +300,138 @@ export async function sendOrderNotification(order: OrderData): Promise<boolean> 
     return false;
   }
 }
+
+// Send status change email to customer
+export async function sendStatusChangeEmail(order: {
+  id: string;
+  customerName: string;
+  customerEmail: string;
+  status: string;
+  total: number;
+}): Promise<boolean> {
+  if (!process.env.RESEND_API_KEY) {
+    console.log('Email skipped: API key not found');
+    return false;
+  }
+
+  const statusMessages: Record<string, { title: string; message: string; emoji: string }> = {
+    pending: {
+      title: 'Order Received',
+      message: 'We\'ve received your order and it\'s being reviewed. We\'ll start preparing it soon!',
+      emoji: '📝'
+    },
+    paid: {
+      title: 'Payment Confirmed',
+      message: 'Your payment has been confirmed! We\'re now preparing your delicious treats.',
+      emoji: '✅'
+    },
+    ready: {
+      title: 'Ready for Pickup!',
+      message: 'Great news! Your order is ready and waiting for you. Please pick it up at your earliest convenience.',
+      emoji: '🎉'
+    },
+    completed: {
+      title: 'Order Complete',
+      message: 'Thank you for your order! We hope you enjoy your treats. We\'d love to see you again soon!',
+      emoji: '💎'
+    },
+    cancelled: {
+      title: 'Order Cancelled',
+      message: 'Your order has been cancelled. If you have any questions, please don\'t hesitate to reach out to us.',
+      emoji: '❌'
+    }
+  };
+
+  const statusInfo = statusMessages[order.status] || {
+    title: `Order ${order.status}`,
+    message: `Your order status has been updated to: ${order.status}`,
+    emoji: '📋'
+  };
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: 'Georgia', serif; background-color: #F4C2C2; margin: 0; padding: 20px; }
+    .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(61, 43, 31, 0.15); }
+    .header { background: linear-gradient(135deg, #3D2B1F 0%, #2a1e15 100%); color: #F4C2C2; padding: 40px 30px; text-align: center; }
+    .header h1 { margin: 0; font-size: 24px; letter-spacing: 2px; }
+    .emoji { font-size: 50px; margin-bottom: 15px; }
+    .content { padding: 35px; text-align: center; }
+    .greeting { font-size: 20px; color: #3D2B1F; margin-bottom: 20px; }
+    .status-box { background: linear-gradient(135deg, #F4C2C2 0%, #f0b8b8 100%); padding: 25px; border-radius: 12px; margin: 25px 0; }
+    .status-title { font-size: 22px; color: #3D2B1F; font-weight: bold; margin-bottom: 10px; }
+    .status-message { font-size: 16px; color: #3D2B1F; line-height: 1.6; }
+    .pickup-info { background: #FFF8E7; border: 2px solid #D4AF37; padding: 20px; border-radius: 12px; margin: 25px 0; }
+    .pickup-title { color: #D4AF37; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+    .pickup-text { color: #3D2B1F; font-size: 14px; line-height: 1.6; }
+    .order-info { margin-top: 25px; padding-top: 20px; border-top: 1px solid #eee; }
+    .order-id { color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+    .footer { text-align: center; padding: 25px; background: #fafafa; }
+    .footer p { color: #888; font-size: 12px; margin: 5px 0; }
+    .brand { color: #3D2B1F; font-size: 14px; letter-spacing: 2px; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="emoji">${statusInfo.emoji}</div>
+      <h1>${statusInfo.title.toUpperCase()}</h1>
+    </div>
+    
+    <div class="content">
+      <p class="greeting">Hi ${order.customerName}!</p>
+      
+      <div class="status-box">
+        <div class="status-title">Your order from Diamond Dulceria is ${order.status.toUpperCase()}!</div>
+        <p class="status-message">${statusInfo.message}</p>
+      </div>
+      
+      ${order.status === 'ready' ? `
+      <div class="pickup-info">
+        <div class="pickup-title">📍 Pickup Instructions</div>
+        <p class="pickup-text">
+          Please bring a valid ID when picking up your order.<br>
+          We accept cash or card payment on pickup.<br>
+          Orders not picked up within 48 hours may be cancelled.
+        </p>
+      </div>
+      ` : ''}
+      
+      <div class="order-info">
+        <span class="order-id">Order #${order.id.slice(0, 8).toUpperCase()}</span>
+        <p style="color: #3D2B1F; font-size: 18px; font-weight: bold; margin: 10px 0;">Total: $${order.total}</p>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <div class="brand">DIAMOND DULCERIA</div>
+      <p>Premium Artisan Confections • Est. 2025</p>
+      <p style="margin-top: 15px;">Questions? Reply to this email or contact us directly.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'Diamond Dulceria <orders@diamonddulceria.com>',
+      to: order.customerEmail,
+      subject: `${statusInfo.emoji} ${statusInfo.title} - Diamond Dulceria`,
+      html: htmlContent,
+    });
+
+    if (error) {
+      console.error('Resend error:', error);
+      return false;
+    }
+
+    console.log('Status change email sent successfully:', data?.id);
+    return true;
+  } catch (error) {
+    console.error('Failed to send status change email:', error);
+    return false;
+  }
+}
