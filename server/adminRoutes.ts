@@ -5,6 +5,8 @@ import bcrypt from "bcryptjs";
 import { sendEmail } from "./email";
 
 const ADMIN_SESSION_SECRET = process.env.ADMIN_SESSION_SECRET || "diamond-dulceria-admin-2024";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "dymonlhf@gmail.com";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Dymon1234";
 
 function verifyAdminAuth(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
@@ -19,7 +21,7 @@ function verifyAdminAuth(req: Request, res: Response, next: NextFunction) {
     const decoded = Buffer.from(token, "base64").toString("utf-8");
     const [email, timestamp] = decoded.split("|");
     const tokenTime = parseInt(timestamp);
-    if (Date.now() - tokenTime > 24 * 60 * 60 * 1000) {
+    if (Date.now() - tokenTime > 7 * 24 * 60 * 60 * 1000) {
       return res.status(401).json({ error: "Token expired" });
     }
     (req as any).adminEmail = email;
@@ -37,18 +39,27 @@ export function registerAdminRoutes(app: Express) {
         return res.status(400).json({ error: "Email and password required" });
       }
 
+      // Try env-based authentication first (works on all environments)
+      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+        const token = Buffer.from(`${email}|${Date.now()}`).toString("base64");
+        return res.json({ 
+          success: true, 
+          token, 
+          admin: { email: ADMIN_EMAIL, name: "Diamond Dulceria Admin" } 
+        });
+      }
+
+      // Fallback to database authentication
       const admin = await storage.getAdminByEmail(email);
-      if (!admin) {
-        return res.status(401).json({ error: "Invalid credentials" });
+      if (admin) {
+        const validPassword = await bcrypt.compare(password, admin.passwordHash);
+        if (validPassword) {
+          const token = Buffer.from(`${email}|${Date.now()}`).toString("base64");
+          return res.json({ success: true, token, admin: { email: admin.email, name: admin.name } });
+        }
       }
 
-      const validPassword = await bcrypt.compare(password, admin.passwordHash);
-      if (!validPassword) {
-        return res.status(401).json({ error: "Invalid credentials" });
-      }
-
-      const token = Buffer.from(`${email}|${Date.now()}`).toString("base64");
-      res.json({ success: true, token, admin: { email: admin.email, name: admin.name } });
+      return res.status(401).json({ error: "Invalid credentials" });
     } catch (error: any) {
       console.error("Admin login error:", error);
       res.status(500).json({ error: "Login failed" });
