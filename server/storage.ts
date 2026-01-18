@@ -22,6 +22,7 @@ export interface IStorage {
   getSiteSetting(key: string): Promise<SiteSetting | undefined>;
   getAllSiteSettings(): Promise<SiteSetting[]>;
   upsertSiteSetting(key: string, value: string): Promise<SiteSetting>;
+  deleteSiteSetting(key: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -199,6 +200,11 @@ export class DatabaseStorage implements IStorage {
       .values({ key, value })
       .returning();
     return created;
+  }
+
+  async deleteSiteSetting(key: string): Promise<boolean> {
+    await db.delete(siteSettings).where(eq(siteSettings.key, key));
+    return true;
   }
 }
 

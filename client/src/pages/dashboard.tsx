@@ -1896,6 +1896,8 @@ function ContactsSection({ orders, token, onSelectOrder, onRefresh }: {
 
 function SettingsSection({ token }: { token: string }) {
   const [settings, setSettings] = useState<Record<string, string>>({});
+  const [customSections, setCustomSections] = useState<{ key: string; label: string }[]>([]);
+  const [newSectionLabel, setNewSectionLabel] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
@@ -1911,6 +1913,8 @@ function SettingsSection({ token }: { token: string }) {
     footerText: "Diamond Dulceria - Handcrafted with Love",
   };
 
+  const defaultSectionKeys = ['trufflesTitle', 'cookiesTitle', 'seasonalTitle', 'customTitle'];
+
   useEffect(() => {
     fetchSettings();
   }, []);
@@ -1922,7 +1926,12 @@ function SettingsSection({ token }: { token: string }) {
       });
       const data = await res.json();
       if (data.success) {
-        setSettings({ ...defaultHeaders, ...data.settings });
+        const merged = { ...defaultHeaders, ...data.settings };
+        setSettings(merged);
+        const customKeys = Object.keys(data.settings || {}).filter(
+          k => k.startsWith('section_') && !defaultSectionKeys.includes(k)
+        );
+        setCustomSections(customKeys.map(k => ({ key: k, label: k.replace('section_', '').replace(/_/g, ' ') })));
       } else {
         setSettings(defaultHeaders);
       }
@@ -1949,6 +1958,54 @@ function SettingsSection({ token }: { token: string }) {
     setSaving(false);
   };
 
+  const addSection = () => {
+    if (!newSectionLabel.trim()) return;
+    const key = `section_${newSectionLabel.trim().toLowerCase().replace(/\s+/g, '_')}`;
+    if (settings[key] || customSections.find(s => s.key === key)) {
+      toast({ title: "Section already exists", variant: "destructive" });
+      return;
+    }
+    setCustomSections(prev => [...prev, { key, label: newSectionLabel.trim() }]);
+    setSettings(prev => ({ ...prev, [key]: newSectionLabel.trim() }));
+    setNewSectionLabel("");
+    toast({ title: "Section Added", description: "Don't forget to save your changes." });
+  };
+
+  const deleteSection = async (key: string) => {
+    if (!confirm("Delete this section header?")) return;
+    setCustomSections(prev => prev.filter(s => s.key !== key));
+    setSettings(prev => {
+      const updated = { ...prev };
+      delete updated[key];
+      return updated;
+    });
+    try {
+      await fetch("/api/admin/settings/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ key }),
+      });
+    } catch {}
+    toast({ title: "Section Removed" });
+  };
+
+  const deleteDefaultSection = async (key: string, label: string) => {
+    if (!confirm(`Remove "${label}" section header?`)) return;
+    setSettings(prev => {
+      const updated = { ...prev };
+      delete updated[key];
+      return updated;
+    });
+    try {
+      await fetch("/api/admin/settings/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ key }),
+      });
+    } catch {}
+    toast({ title: "Section Removed", description: "Save changes to apply." });
+  };
+
   if (loading) {
     return (
       <div className="text-center py-20">
@@ -1957,31 +2014,18 @@ function SettingsSection({ token }: { token: string }) {
     );
   }
 
-  const settingsGroups = [
-    {
-      title: "Hero Section",
-      fields: [
-        { key: "heroTitle", label: "Main Title" },
-        { key: "heroSubtitle", label: "Subtitle" },
-        { key: "heroTagline", label: "Tagline" },
-      ],
-    },
-    {
-      title: "Section Headers",
-      fields: [
-        { key: "trufflesTitle", label: "Truffles Section" },
-        { key: "cookiesTitle", label: "Cookies Section" },
-        { key: "seasonalTitle", label: "Seasonal Section" },
-        { key: "customTitle", label: "Custom Section" },
-      ],
-    },
-    {
-      title: "Footer",
-      fields: [
-        { key: "footerText", label: "Footer Text" },
-      ],
-    },
+  const heroFields = [
+    { key: "heroTitle", label: "Main Title" },
+    { key: "heroSubtitle", label: "Subtitle" },
+    { key: "heroTagline", label: "Tagline" },
   ];
+
+  const defaultSectionFields = [
+    { key: "trufflesTitle", label: "Truffles Section" },
+    { key: "cookiesTitle", label: "Cookies Section" },
+    { key: "seasonalTitle", label: "Seasonal Section" },
+    { key: "customTitle", label: "Custom Section" },
+  ].filter(f => settings[f.key] !== undefined);
 
   return (
     <div className="space-y-6">
@@ -2002,12 +2046,32 @@ function SettingsSection({ token }: { token: string }) {
         </button>
       </div>
 
-      {settingsGroups.map((group, idx) => (
-        <div key={idx} className="p-4 sm:p-6 rounded-lg border border-[#3D2B1F]/10" style={{ backgroundColor: '#F9F1F1' }}>
-          <h3 className="font-display text-lg text-[#3D2B1F] mb-4">{group.title}</h3>
-          <div className="space-y-4">
-            {group.fields.map(field => (
-              <div key={field.key}>
+      <div className="p-4 sm:p-6 rounded-lg border border-[#3D2B1F]/10" style={{ backgroundColor: '#F9F1F1' }}>
+        <h3 className="font-display text-lg text-[#3D2B1F] mb-4">Hero Section</h3>
+        <div className="space-y-4">
+          {heroFields.map(field => (
+            <div key={field.key}>
+              <label className="block text-sm text-[#3D2B1F]/70 mb-1">{field.label}</label>
+              <input
+                type="text"
+                value={settings[field.key] || ""}
+                onChange={(e) => setSettings(prev => ({ ...prev, [field.key]: e.target.value }))}
+                className="w-full px-4 py-2 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F]"
+                data-testid={`input-setting-${field.key}`}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="p-4 sm:p-6 rounded-lg border border-[#3D2B1F]/10" style={{ backgroundColor: '#F9F1F1' }}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-display text-lg text-[#3D2B1F]">Section Headers</h3>
+        </div>
+        <div className="space-y-3">
+          {defaultSectionFields.map(field => (
+            <div key={field.key} className="flex items-center gap-2">
+              <div className="flex-1">
                 <label className="block text-sm text-[#3D2B1F]/70 mb-1">{field.label}</label>
                 <input
                   type="text"
@@ -2017,10 +2081,77 @@ function SettingsSection({ token }: { token: string }) {
                   data-testid={`input-setting-${field.key}`}
                 />
               </div>
-            ))}
+              <button
+                onClick={() => deleteDefaultSection(field.key, field.label)}
+                className="mt-6 p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                title="Delete section"
+                data-testid={`delete-section-${field.key}`}
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+          {customSections.map(section => (
+            <div key={section.key} className="flex items-center gap-2">
+              <div className="flex-1">
+                <label className="block text-sm text-[#3D2B1F]/70 mb-1 capitalize">{section.label}</label>
+                <input
+                  type="text"
+                  value={settings[section.key] || ""}
+                  onChange={(e) => setSettings(prev => ({ ...prev, [section.key]: e.target.value }))}
+                  className="w-full px-4 py-2 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F]"
+                  data-testid={`input-setting-${section.key}`}
+                />
+              </div>
+              <button
+                onClick={() => deleteSection(section.key)}
+                className="mt-6 p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                title="Delete section"
+                data-testid={`delete-section-${section.key}`}
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 pt-4 border-t border-[#3D2B1F]/10">
+          <label className="block text-sm text-[#3D2B1F]/70 mb-1">Add New Section</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newSectionLabel}
+              onChange={(e) => setNewSectionLabel(e.target.value)}
+              placeholder="e.g., Valentine's Special"
+              className="flex-1 px-4 py-2 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F]"
+              data-testid="input-new-section"
+              onKeyDown={(e) => e.key === 'Enter' && addSection()}
+            />
+            <button
+              onClick={addSection}
+              className="px-4 py-2 rounded-lg text-white flex items-center gap-2"
+              style={{ backgroundColor: '#D4AF37' }}
+              data-testid="button-add-section"
+            >
+              <Plus className="w-4 h-4" />
+              Add
+            </button>
           </div>
         </div>
-      ))}
+      </div>
+
+      <div className="p-4 sm:p-6 rounded-lg border border-[#3D2B1F]/10" style={{ backgroundColor: '#F9F1F1' }}>
+        <h3 className="font-display text-lg text-[#3D2B1F] mb-4">Footer</h3>
+        <div>
+          <label className="block text-sm text-[#3D2B1F]/70 mb-1">Footer Text</label>
+          <input
+            type="text"
+            value={settings.footerText || ""}
+            onChange={(e) => setSettings(prev => ({ ...prev, footerText: e.target.value }))}
+            className="w-full px-4 py-2 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F]"
+            data-testid="input-setting-footerText"
+          />
+        </div>
+      </div>
 
       <div className="p-4 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/30">
         <p className="text-sm text-[#3D2B1F]">

@@ -519,6 +519,20 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
+  app.post("/api/admin/settings/delete", verifyAdminAuth, async (req, res) => {
+    try {
+      const { key } = req.body;
+      if (!key || typeof key !== 'string') {
+        return res.status(400).json({ error: "Key required" });
+      }
+      await storage.deleteSiteSetting(key);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting setting:", error);
+      res.status(500).json({ error: "Failed to delete setting" });
+    }
+  });
+
   // Public endpoint to get site settings for frontend
   app.get("/api/settings", async (req, res) => {
     try {
