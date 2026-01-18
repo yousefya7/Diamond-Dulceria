@@ -4,7 +4,8 @@ import {
   Package, Clock, CheckCircle, RefreshCw, ArrowLeft, Phone, Mail, 
   MapPin, FileText, DollarSign, X, Send, Edit, Trash2, Plus,
   TrendingUp, Calendar, MessageSquare, Settings, Search, Bell,
-  BarChart3, PieChart, Activity, Users, Sparkles, Check, XCircle
+  BarChart3, PieChart, Activity, Users, Sparkles, Check, XCircle, Layers,
+  GripVertical, ChevronUp, ChevronDown
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -35,6 +36,17 @@ type Product = {
   image: string | null;
   isCustom: boolean;
   trending: boolean;
+  active: boolean;
+  createdAt: string;
+};
+
+type Category = {
+  id: string;
+  slug: string;
+  name: string;
+  title: string;
+  description: string | null;
+  displayOrder: number;
   active: boolean;
   createdAt: string;
 };
@@ -145,7 +157,7 @@ function LoginForm({ onLogin }: { onLogin: (token: string, admin: any) => void }
 export default function Dashboard() {
   const [token, setToken] = useState<string | null>(null);
   const [admin, setAdmin] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "orders" | "products" | "analytics" | "contacts" | "custom" | "settings">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "orders" | "products" | "categories" | "analytics" | "contacts" | "custom" | "settings">("overview");
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -414,6 +426,7 @@ export default function Dashboard() {
             { id: 'custom', label: 'Custom', icon: Sparkles },
             { id: 'contacts', label: 'Contacts', icon: Users },
             { id: 'products', label: 'Products', icon: Package },
+            { id: 'categories', label: 'Categories', icon: Layers },
             { id: 'analytics', label: 'Analytics', icon: BarChart3 },
             { id: 'settings', label: 'Settings', icon: Settings },
           ].map(tab => (
@@ -795,6 +808,10 @@ export default function Dashboard() {
             onSelectOrder={(order) => { setSelectedOrder(order); setShowOrderModal(true); }}
             onRefresh={() => fetchData(false)}
           />
+        )}
+
+        {activeTab === 'categories' && (
+          <CategoriesSection token={token} />
         )}
 
         {activeTab === 'settings' && (
@@ -1891,6 +1908,373 @@ function ContactsSection({ orders, token, onSelectOrder, onRefresh }: {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+function CategoriesSection({ token }: { token: string }) {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch("/api/admin/categories", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCategories(data.categories);
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+    setLoading(false);
+  };
+
+  const seedCategories = async () => {
+    try {
+      const res = await fetch("/api/admin/seed-categories", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "Categories Seeded", description: data.message });
+        fetchCategories();
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to seed categories", variant: "destructive" });
+    }
+  };
+
+  const deleteCategory = async (id: string) => {
+    if (!confirm("Delete this category? Products in this category will need to be reassigned.")) return;
+    try {
+      await fetch(`/api/admin/categories/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast({ title: "Category Deleted" });
+      fetchCategories();
+    } catch (error) {
+      toast({ title: "Error", variant: "destructive" });
+    }
+  };
+
+  const moveCategory = async (id: string, direction: 'up' | 'down') => {
+    const idx = categories.findIndex(c => c.id === id);
+    if ((direction === 'up' && idx === 0) || (direction === 'down' && idx === categories.length - 1)) return;
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    const current = categories[idx];
+    const swap = categories[swapIdx];
+    await Promise.all([
+      fetch(`/api/admin/categories/${current.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ displayOrder: swap.displayOrder }),
+      }),
+      fetch(`/api/admin/categories/${swap.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ displayOrder: current.displayOrder }),
+      }),
+    ]);
+    fetchCategories();
+  };
+
+  if (loading) {
+    return (
+      <div className="text-center py-20">
+        <RefreshCw className="w-10 h-10 text-[#3D2B1F]/30 mx-auto animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h2 className="font-display text-xl text-[#3D2B1F] flex items-center gap-2">
+          <Layers className="w-5 h-5" />
+          Categories
+        </h2>
+        <div className="flex gap-2">
+          <button
+            onClick={seedCategories}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm"
+            style={{ backgroundColor: '#D4AF37' }}
+            data-testid="button-seed-categories"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span className="hidden sm:inline">Import Default</span>
+          </button>
+          <button
+            onClick={() => { setEditingCategory(null); setShowModal(true); }}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm"
+            style={{ backgroundColor: '#3D2B1F' }}
+            data-testid="button-add-category"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Add Category</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="p-4 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/30">
+        <p className="text-sm text-[#3D2B1F]">
+          Categories control your website navigation and product sections. Changes reflect instantly on the live site.
+        </p>
+      </div>
+
+      {categories.length === 0 ? (
+        <div className="text-center py-12 rounded-lg border border-[#3D2B1F]/10" style={{ backgroundColor: '#F9F1F1' }}>
+          <Layers className="w-12 h-12 text-[#3D2B1F]/30 mx-auto mb-3" />
+          <p className="text-[#3D2B1F]/60">No categories yet</p>
+          <button
+            onClick={seedCategories}
+            className="mt-3 px-4 py-2 rounded-lg text-white text-sm"
+            style={{ backgroundColor: '#D4AF37' }}
+          >
+            Import Default Categories
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {categories.map((category, idx) => (
+            <div
+              key={category.id}
+              className={`p-4 rounded-lg border transition-all ${category.active ? 'border-[#3D2B1F]/10' : 'border-red-200 opacity-60'}`}
+              style={{ backgroundColor: '#F9F1F1' }}
+              data-testid={`category-card-${category.id}`}
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex flex-col gap-1">
+                  <button
+                    onClick={() => moveCategory(category.id, 'up')}
+                    disabled={idx === 0}
+                    className="p-1 text-[#3D2B1F]/40 hover:text-[#3D2B1F] disabled:opacity-30"
+                  >
+                    <ChevronUp className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => moveCategory(category.id, 'down')}
+                    disabled={idx === categories.length - 1}
+                    className="p-1 text-[#3D2B1F]/40 hover:text-[#3D2B1F] disabled:opacity-30"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-display text-lg text-[#3D2B1F]">{category.name}</h3>
+                    <span className="text-xs px-2 py-0.5 rounded bg-[#3D2B1F]/10 text-[#3D2B1F]/60">/{category.slug}</span>
+                    {!category.active && <span className="text-xs px-2 py-0.5 rounded bg-red-100 text-red-600">Hidden</span>}
+                  </div>
+                  <p className="text-sm font-medium text-[#D4AF37] mb-1">{category.title}</p>
+                  {category.description && <p className="text-sm text-[#3D2B1F]/60">{category.description}</p>}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setEditingCategory(category); setShowModal(true); }}
+                    className="p-2 text-[#3D2B1F]/50 hover:text-[#3D2B1F] hover:bg-white/50 rounded-lg"
+                    data-testid={`edit-category-${category.id}`}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => deleteCategory(category.id)}
+                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                    data-testid={`delete-category-${category.id}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <AnimatePresence>
+        {showModal && (
+          <CategoryModal
+            category={editingCategory}
+            token={token}
+            onClose={() => { setShowModal(false); setEditingCategory(null); }}
+            onSuccess={() => { setShowModal(false); setEditingCategory(null); fetchCategories(); }}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function CategoryModal({ category, token, onClose, onSuccess }: {
+  category: Category | null;
+  token: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [name, setName] = useState(category?.name || "");
+  const [slug, setSlug] = useState(category?.slug || "");
+  const [title, setTitle] = useState(category?.title || "");
+  const [description, setDescription] = useState(category?.description || "");
+  const [displayOrder, setDisplayOrder] = useState(category?.displayOrder?.toString() || "0");
+  const [active, setActive] = useState(category?.active ?? true);
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (!category && name && !slug) {
+      setSlug(name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''));
+    }
+  }, [name, category, slug]);
+
+  const handleSave = async () => {
+    if (!name || !slug || !title) {
+      toast({ title: "Please fill in all required fields", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    try {
+      const url = category ? `/api/admin/categories/${category.id}` : '/api/admin/categories';
+      const method = category ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name, slug, title, description: description || null, displayOrder: parseInt(displayOrder) || 0, active }),
+      });
+      if (res.ok) {
+        toast({ title: category ? "Category Updated" : "Category Created" });
+        onSuccess();
+      } else {
+        const data = await res.json();
+        toast({ title: data.error || "Failed to save", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "Error saving category", variant: "destructive" });
+    }
+    setSaving(false);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="bg-white rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="font-display text-xl text-[#3D2B1F]">{category ? "Edit Category" : "Add Category"}</h2>
+          <button onClick={onClose} className="p-2 hover:bg-[#3D2B1F]/10 rounded-full">
+            <X className="w-5 h-5 text-[#3D2B1F]" />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm text-[#3D2B1F]/70 mb-1">Name *</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g., Truffles"
+              className="w-full px-4 py-2 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F]"
+              data-testid="input-category-name"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-[#3D2B1F]/70 mb-1">Slug * (URL-friendly)</label>
+            <input
+              type="text"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''))}
+              placeholder="e.g., truffles"
+              className="w-full px-4 py-2 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F]"
+              data-testid="input-category-slug"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-[#3D2B1F]/70 mb-1">Section Title *</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g., Handcrafted Truffles"
+              className="w-full px-4 py-2 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F]"
+              data-testid="input-category-title"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-[#3D2B1F]/70 mb-1">Description</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Description shown under the section title..."
+              rows={2}
+              className="w-full px-4 py-2 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F]"
+              data-testid="input-category-description"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-[#3D2B1F]/70 mb-1">Display Order</label>
+            <input
+              type="number"
+              value={displayOrder}
+              onChange={(e) => setDisplayOrder(e.target.value)}
+              className="w-full px-4 py-2 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F]"
+              data-testid="input-category-order"
+            />
+          </div>
+
+          <label className="flex items-center gap-2 text-sm text-[#3D2B1F]">
+            <input
+              type="checkbox"
+              checked={active}
+              onChange={(e) => setActive(e.target.checked)}
+              className="rounded"
+            />
+            Active (visible on website)
+          </label>
+        </div>
+
+        <div className="flex gap-2 mt-6">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2 rounded-lg bg-[#3D2B1F]/10 text-[#3D2B1F]"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-white disabled:opacity-50"
+            style={{ backgroundColor: '#3D2B1F' }}
+            data-testid="button-save-category"
+          >
+            {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+            {saving ? "Saving..." : "Save"}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
 

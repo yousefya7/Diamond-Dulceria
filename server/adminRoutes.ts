@@ -1,6 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { storage } from "./storage";
-import { insertProductSchema } from "@shared/schema";
+import { insertProductSchema, insertCategorySchema } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import { sendEmail, sendStatusChangeEmail } from "./email";
 
@@ -543,6 +543,98 @@ export function registerAdminRoutes(app: Express) {
     } catch (error: any) {
       console.error("Error fetching public settings:", error);
       res.status(500).json({ error: "Failed to fetch settings" });
+    }
+  });
+
+  // Categories endpoints (admin)
+  app.get("/api/admin/categories", verifyAdminAuth, async (req, res) => {
+    try {
+      const categories = await storage.getAllCategories();
+      res.json({ success: true, categories });
+    } catch (error: any) {
+      console.error("Error fetching categories:", error);
+      res.status(500).json({ error: "Failed to fetch categories" });
+    }
+  });
+
+  app.post("/api/admin/categories", verifyAdminAuth, async (req, res) => {
+    try {
+      const parsed = insertCategorySchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid category data", details: parsed.error });
+      }
+      const existing = await storage.getCategoryBySlug(parsed.data.slug);
+      if (existing) {
+        return res.status(400).json({ error: "Category with this slug already exists" });
+      }
+      const category = await storage.createCategory(parsed.data);
+      res.json({ success: true, category });
+    } catch (error: any) {
+      console.error("Error creating category:", error);
+      res.status(500).json({ error: "Failed to create category" });
+    }
+  });
+
+  app.put("/api/admin/categories/:id", verifyAdminAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const category = await storage.updateCategory(id, updates);
+      if (!category) {
+        return res.status(404).json({ error: "Category not found" });
+      }
+      res.json({ success: true, category });
+    } catch (error: any) {
+      console.error("Error updating category:", error);
+      res.status(500).json({ error: "Failed to update category" });
+    }
+  });
+
+  app.delete("/api/admin/categories/:id", verifyAdminAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteCategory(id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting category:", error);
+      res.status(500).json({ error: "Failed to delete category" });
+    }
+  });
+
+  // Public endpoint for categories (for navbar/frontend)
+  app.get("/api/categories", async (req, res) => {
+    try {
+      const categories = await storage.getActiveCategories();
+      res.json({ success: true, categories });
+    } catch (error: any) {
+      console.error("Error fetching public categories:", error);
+      res.status(500).json({ error: "Failed to fetch categories" });
+    }
+  });
+
+  // Seed default categories endpoint
+  app.post("/api/admin/seed-categories", verifyAdminAuth, async (req, res) => {
+    try {
+      const defaultCategories = [
+        { slug: "truffles", name: "Truffles", title: "Handcrafted Truffles", description: "Indulge in our signature collection of artisan chocolate truffles", displayOrder: 1, active: true },
+        { slug: "cookies", name: "Cookies", title: "Signature Cookies", description: "Freshly baked cookies made with premium ingredients", displayOrder: 2, active: true },
+        { slug: "seasonal", name: "Seasonal", title: "Seasonal Specials", description: "Limited edition treats for the season", displayOrder: 3, active: true },
+        { slug: "custom", name: "Custom", title: "Custom Creations", description: "Bespoke confections crafted just for you", displayOrder: 4, active: true },
+      ];
+      let created = 0, skipped = 0;
+      for (const cat of defaultCategories) {
+        const existing = await storage.getCategoryBySlug(cat.slug);
+        if (!existing) {
+          await storage.createCategory(cat);
+          created++;
+        } else {
+          skipped++;
+        }
+      }
+      res.json({ success: true, message: `Created ${created} categories, skipped ${skipped} existing`, created, skipped });
+    } catch (error: any) {
+      console.error("Error seeding categories:", error);
+      res.status(500).json({ error: "Failed to seed categories" });
     }
   });
 }

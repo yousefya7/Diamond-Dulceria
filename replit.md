@@ -27,11 +27,13 @@ A luxury, mobile-first e-commerce website for Diamond Dulceria (Estd. 2025), a p
 - `/dashboard` - Admin CRM dashboard
 
 ## Admin Dashboard Features
-- Order management (view, update status, add notes)
-- Product management (add, edit, delete products)
+- Order management (view, update status, add notes, delete)
+- Product management (add, edit, delete, image URLs, category grouping)
+- **Categories management** (add, edit, delete, reorder categories)
 - Customer contacts (view all customers, email directly)
 - Custom orders (approve/decline, send quotes)
 - Analytics (revenue graphs, order status, category breakdown)
+- Settings tab for editable site headers
 - 15-second auto-sync with new order popup alerts
 
 ## Environment Variables
@@ -55,7 +57,16 @@ The email notification system uses Resend for sending beautiful HTML emails:
 - "Import Products" button seeds default products into database
 - Changes in dashboard instantly reflect on the live website
 
+## Dynamic Content System
+- **Categories table** stores navigation items and section headers
+- **Navbar** automatically generated from categories in database
+- **Section headers** (titles and descriptions) pulled from categories
+- Changes in Admin Dashboard → Categories tab reflect instantly on live site
+- "Import Default" button seeds default categories (Truffles, Cookies, Seasonal, Custom)
+
 ## Recent Changes (Jan 2026)
+- Dynamic categories system for navbar and section headers
+- Categories management tab in admin dashboard
 - Dynamic product loading from database to main site
 - Status change email notifications to customers
 - Seed products endpoint for initial setup

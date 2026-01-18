@@ -24,6 +24,16 @@ type Product = {
   trending?: boolean;
 };
 
+type Category = {
+  id: string;
+  slug: string;
+  name: string;
+  title: string;
+  description: string | null;
+  displayOrder: number;
+  active: boolean;
+};
+
 const defaultProducts: Product[] = [
   { 
     id: "dubai-chocolate", 
@@ -241,6 +251,7 @@ const DiamondLogo = ({ className = "", gold = false }: { className?: string; gol
 export default function Home() {
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>(defaultProducts);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [cart, setCart] = useState<CartItem[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('diamond-cart');
@@ -277,6 +288,32 @@ export default function Home() {
   const seasonal = useMemo(() => products.filter(p => p.category === "seasonal"), [products]);
   const custom = useMemo(() => products.filter(p => p.category === "custom"), [products]);
 
+  const getCategoryInfo = (slug: string) => {
+    const cat = categories.find(c => c.slug === slug);
+    return cat || { title: slug.charAt(0).toUpperCase() + slug.slice(1), description: null };
+  };
+
+  const getProductsBySlug = (slug: string) => {
+    const singularSlug = slug.endsWith('s') ? slug.slice(0, -1) : slug;
+    return products.filter(p => 
+      p.category === slug || 
+      p.category === singularSlug || 
+      p.category === slug + 's' ||
+      (slug === 'custom' && p.isCustom)
+    );
+  };
+
+  const defaultCategories = [
+    { id: 'default-truffles', slug: 'truffles', name: 'Truffles', title: 'Truffle Collection', description: 'Luxurious filled center, handcrafted to order', displayOrder: 1, active: true },
+    { id: 'default-cookies', slug: 'cookies', name: 'Cookies', title: 'Cookie Collection', description: 'Soft-baked perfection in every bite', displayOrder: 2, active: true },
+    { id: 'default-seasonal', slug: 'seasonal', name: 'Seasonal', title: 'Seasonal Specials', description: 'Limited-time treats for the season', displayOrder: 3, active: true },
+    { id: 'default-custom', slug: 'custom', name: 'Custom', title: 'Bespoke Creations', description: 'Custom flavors crafted just for you', displayOrder: 4, active: true },
+  ];
+
+  const allCategories = categories.length > 0 ? categories : defaultCategories;
+  const visibleCategories = allCategories.filter(cat => cat.active && (cat.slug === 'custom' || getProductsBySlug(cat.slug).length > 0));
+  const firstCategorySlug = visibleCategories.length > 0 ? visibleCategories[0].slug : 'truffles';
+
   useEffect(() => {
     fetch('/api/products')
       .then(res => res.json())
@@ -287,6 +324,18 @@ export default function Home() {
       })
       .catch(err => {
         console.error('Error fetching products:', err);
+      });
+
+    fetch('/api/categories')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.categories) {
+          const sorted = [...data.categories].sort((a, b) => a.displayOrder - b.displayOrder);
+          setCategories(sorted);
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching categories:', err);
       });
   }, []);
 
@@ -661,37 +710,18 @@ export default function Home() {
             <div 
               className="flex items-center justify-around w-full px-2 sm:px-6 py-3 sm:py-4"
             >
-              <a 
-                href="#truffles" 
-                onClick={(e) => { e.preventDefault(); document.getElementById('truffles')?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="flex-shrink font-display text-[3.2vw] sm:text-lg tracking-[0.05em] sm:tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors text-center py-2 px-1 sm:px-3 rounded-lg hover:bg-[#3D2B1F]/5 active:bg-[#3D2B1F]/10"
-              >
-                Truffles
-              </a>
-              <span className="text-[#3D2B1F]/30 text-[3vw] sm:text-lg">|</span>
-              <a 
-                href="#cookies" 
-                onClick={(e) => { e.preventDefault(); document.getElementById('cookies')?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="flex-shrink font-display text-[3.2vw] sm:text-lg tracking-[0.05em] sm:tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors text-center py-2 px-1 sm:px-3 rounded-lg hover:bg-[#3D2B1F]/5 active:bg-[#3D2B1F]/10"
-              >
-                Cookies
-              </a>
-              <span className="text-[#3D2B1F]/30 text-[3vw] sm:text-lg">|</span>
-              <a 
-                href="#seasonal" 
-                onClick={(e) => { e.preventDefault(); document.getElementById('seasonal')?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="flex-shrink font-display text-[3.2vw] sm:text-lg tracking-[0.05em] sm:tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors text-center py-2 px-1 sm:px-3 rounded-lg hover:bg-[#3D2B1F]/5 active:bg-[#3D2B1F]/10"
-              >
-                Seasonal
-              </a>
-              <span className="text-[#3D2B1F]/30 text-[3vw] sm:text-lg">|</span>
-              <a 
-                href="#bespoke" 
-                onClick={(e) => { e.preventDefault(); document.getElementById('bespoke')?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="flex-shrink font-display text-[3.2vw] sm:text-lg tracking-[0.05em] sm:tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors text-center py-2 px-1 sm:px-3 rounded-lg hover:bg-[#3D2B1F]/5 active:bg-[#3D2B1F]/10"
-              >
-                Custom
-              </a>
+              {visibleCategories.map((cat, idx) => (
+                <span key={cat.id} className="contents">
+                  <a 
+                    href={`#${cat.slug}`}
+                    onClick={(e) => { e.preventDefault(); document.getElementById(cat.slug)?.scrollIntoView({ behavior: 'smooth' }); }}
+                    className="flex-shrink font-display text-[3.2vw] sm:text-lg tracking-[0.05em] sm:tracking-[0.15em] text-[#3D2B1F] hover:text-[#3D2B1F]/70 transition-colors text-center py-2 px-1 sm:px-3 rounded-lg hover:bg-[#3D2B1F]/5 active:bg-[#3D2B1F]/10"
+                  >
+                    {cat.name}
+                  </a>
+                  {idx < visibleCategories.length - 1 && <span className="text-[#3D2B1F]/30 text-[3vw] sm:text-lg">|</span>}
+                </span>
+              ))}
               <span className="text-[#3D2B1F]/30 text-[3vw] sm:text-lg">|</span>
               <a 
                 href="#wall-of-love" 
@@ -805,7 +835,7 @@ export default function Home() {
                 Handcrafted truffles and signature cookies, made with passion and the finest ingredients.
               </p>
               <button 
-                onClick={() => document.getElementById('truffles')?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={() => document.getElementById(firstCategorySlug)?.scrollIntoView({ behavior: 'smooth' })}
                 className="inline-block px-12 py-5 sm:px-16 sm:py-6 bg-[#3D2B1F] hover:bg-[#2a1e15] text-[#F9F1F1] text-lg font-display tracking-[0.2em] rounded-full transition-all duration-300 active:scale-95 cursor-pointer"
                 data-testid="button-shop-now"
               >
@@ -820,7 +850,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: loading ? 0.5 : 3 }}
             className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer"
-            onClick={() => document.getElementById('truffles')?.scrollIntoView({ behavior: 'smooth' })}
+            onClick={() => document.getElementById(firstCategorySlug)?.scrollIntoView({ behavior: 'smooth' })}
           >
             <span className="text-[#3D2B1F]/50 text-xs tracking-[0.25em] uppercase font-display">Explore</span>
             <motion.div
@@ -839,146 +869,81 @@ export default function Home() {
           <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
         </div>
 
-        {/* Truffle Collection */}
-        <section id="truffles" className="py-24 sm:py-36 px-4 sm:px-6 lg:px-8 scroll-mt-28">
-          <div className="max-w-6xl mx-auto">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-center mb-16 sm:mb-20"
-            >
-              <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl text-[#3D2B1F] mb-5 tracking-wide">
-                Truffle Collection
-              </h2>
-              <p className="text-[#3D2B1F]/60 text-lg sm:text-xl max-w-xl mx-auto">Luxurious filled center, handcrafted to order</p>
-              <div className="flex items-center justify-center gap-4 mt-8">
-                <div className="w-16 h-px bg-[#3D2B1F]/30" />
-                <DiamondLogo className="w-6 h-6 text-[#3D2B1F]/40" />
-                <div className="w-16 h-px bg-[#3D2B1F]/30" />
+        {/* Dynamic Product Sections */}
+        {allCategories.map((cat, catIndex) => {
+          const categoryProducts = getProductsBySlug(cat.slug);
+          const isCustomCategory = cat.slug === 'custom';
+          
+          if (!cat.active) return null;
+          
+          return (
+            <div key={cat.id}>
+              {isCustomCategory ? (
+                <section id={cat.slug} className="py-10 sm:py-12 px-4 sm:px-6 lg:px-8 scroll-mt-28">
+                  <div className="relative max-w-lg mx-auto w-full">
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      className="text-center mb-5"
+                    >
+                      <Sparkles className="w-7 h-7 text-[#D4AF37] mx-auto mb-3" />
+                      <h2 className="font-display text-2xl sm:text-3xl text-[#3D2B1F] mb-2 tracking-wide font-semibold">
+                        {cat.title}
+                      </h2>
+                      <p className="text-[#3D2B1F]/70 text-base sm:text-lg font-medium">{cat.description || 'Custom flavors crafted just for you'}</p>
+                    </motion.div>
+
+                    <div className="bg-[#F9F1F1] border border-[#3D2B1F]/15 rounded-xl p-6 text-center shadow-sm">
+                      <p className="text-[#3D2B1F]/80 text-base sm:text-lg mb-4 font-medium">Have a unique flavor in mind? Subject to approval.</p>
+                      <button
+                        onClick={() => categoryProducts[0] && addToCart(categoryProducts[0])}
+                        className="px-8 py-3 text-base font-display tracking-[0.12em] bg-[#3D2B1F] text-[#F9F1F1] rounded-full hover:bg-[#2a1e15] transition-all font-semibold"
+                        data-testid="add-bespoke-diamond"
+                      >
+                        CUSTOM ORDER
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              ) : categoryProducts.length > 0 && (
+                <section id={cat.slug} className="py-24 sm:py-36 px-4 sm:px-6 lg:px-8 scroll-mt-28">
+                  <div className="max-w-6xl mx-auto">
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      className="text-center mb-16 sm:mb-20"
+                    >
+                      <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl text-[#3D2B1F] mb-5 tracking-wide">
+                        {cat.title}
+                      </h2>
+                      <p className="text-[#3D2B1F]/60 text-lg sm:text-xl max-w-xl mx-auto">{cat.description}</p>
+                      <div className="flex items-center justify-center gap-4 mt-8">
+                        <div className="w-16 h-px bg-[#3D2B1F]/30" />
+                        <DiamondLogo className="w-6 h-6 text-[#3D2B1F]/40" />
+                        <div className="w-16 h-px bg-[#3D2B1F]/30" />
+                      </div>
+                    </motion.div>
+
+                    <div className={`grid grid-cols-2 ${categoryProducts.length <= 3 ? 'md:grid-cols-3' : 'md:grid-cols-4'} gap-4 sm:gap-6`}>
+                      {categoryProducts.map((product, index) => (
+                        <ProductCard key={product.id} product={product} index={index} />
+                      ))}
+                    </div>
+                  </div>
+                </section>
+              )}
+              
+              {/* Section Separator */}
+              <div className="flex items-center justify-center px-8 sm:px-16">
+                <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
+                <DiamondLogo className="w-4 h-4 mx-4 text-[#3D2B1F]/40" />
+                <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
               </div>
-            </motion.div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-              {truffles.map((product, index) => (
-                <ProductCard key={product.id} product={product} index={index} />
-              ))}
             </div>
-          </div>
-        </section>
-
-        {/* Section Separator */}
-        <div className="flex items-center justify-center px-8 sm:px-16">
-          <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
-          <DiamondLogo className="w-4 h-4 mx-4 text-[#3D2B1F]/40" />
-          <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
-        </div>
-
-        {/* Cookie Collection */}
-        <section id="cookies" className="py-24 sm:py-36 px-4 sm:px-6 lg:px-8 scroll-mt-28">
-          <div className="max-w-6xl mx-auto">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-center mb-16 sm:mb-20"
-            >
-              <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl text-[#3D2B1F] mb-5 tracking-wide">
-                Cookie Collection
-              </h2>
-              <p className="text-[#3D2B1F]/60 text-lg sm:text-xl max-w-xl mx-auto">Soft-baked perfection in every bite</p>
-              <div className="flex items-center justify-center gap-4 mt-8">
-                <div className="w-16 h-px bg-[#3D2B1F]/30" />
-                <DiamondLogo className="w-6 h-6 text-[#3D2B1F]/40" />
-                <div className="w-16 h-px bg-[#3D2B1F]/30" />
-              </div>
-            </motion.div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-              {cookies.map((product, index) => (
-                <ProductCard key={product.id} product={product} index={index} />
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Section Separator */}
-        <div className="flex items-center justify-center px-8 sm:px-16">
-          <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
-          <DiamondLogo className="w-4 h-4 mx-4 text-[#3D2B1F]/40" />
-          <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
-        </div>
-
-        {/* Seasonal Section */}
-        <section id="seasonal" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 scroll-mt-28">
-          <div className="max-w-6xl mx-auto">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-center mb-12 sm:mb-16"
-            >
-              <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl text-[#3D2B1F] mb-5 tracking-wide">
-                Seasonal
-              </h2>
-              <p className="text-[#3D2B1F]/60 text-lg sm:text-xl max-w-xl mx-auto">Limited-time treats for the season</p>
-              <div className="flex items-center justify-center gap-4 mt-8">
-                <div className="w-16 h-px bg-[#3D2B1F]/30" />
-                <DiamondLogo className="w-6 h-6 text-[#3D2B1F]/40" />
-                <div className="w-16 h-px bg-[#3D2B1F]/30" />
-              </div>
-            </motion.div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-              {seasonal.map((product, index) => (
-                <ProductCard key={product.id} product={product} index={index} />
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Section Separator */}
-        <div className="flex items-center justify-center px-8 sm:px-16">
-          <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
-          <DiamondLogo className="w-4 h-4 mx-4 text-[#3D2B1F]/40" />
-          <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
-        </div>
-
-        {/* Bespoke Diamond Section - Ultra Compact */}
-        <section id="bespoke" className="py-10 sm:py-12 px-4 sm:px-6 lg:px-8 scroll-mt-28">
-          <div className="relative max-w-lg mx-auto w-full">
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-center mb-5"
-            >
-              <Sparkles className="w-7 h-7 text-[#D4AF37] mx-auto mb-3" />
-              <h2 className="font-display text-2xl sm:text-3xl text-[#3D2B1F] mb-2 tracking-wide font-semibold">
-                Bespoke Creations
-              </h2>
-              <p className="text-[#3D2B1F]/70 text-base sm:text-lg font-medium">Custom flavors crafted just for you</p>
-            </motion.div>
-
-            <div className="bg-[#F9F1F1] border border-[#3D2B1F]/15 rounded-xl p-6 text-center shadow-sm">
-              <p className="text-[#3D2B1F]/80 text-base sm:text-lg mb-4 font-medium">Have a unique flavor in mind? Subject to approval.</p>
-              <button
-                onClick={() => addToCart(custom[0])}
-                className="px-8 py-3 text-base font-display tracking-[0.12em] bg-[#3D2B1F] text-[#F9F1F1] rounded-full hover:bg-[#2a1e15] transition-all font-semibold"
-                data-testid="add-bespoke-diamond"
-              >
-                CUSTOM ORDER
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* Section Separator */}
-        <div className="flex items-center justify-center px-8 sm:px-16">
-          <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
-          <DiamondLogo className="w-4 h-4 mx-4 text-[#3D2B1F]/40" />
-          <div className="flex-1 h-[0.5px] bg-[#3D2B1F]/30" />
-        </div>
+          );
+        })}
 
         {/* Diamond Wall of Love - Reviews Section */}
         <section id="wall-of-love" className="py-28 sm:py-40 scroll-mt-28">
