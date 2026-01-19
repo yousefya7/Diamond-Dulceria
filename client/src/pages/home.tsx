@@ -364,7 +364,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 2000);
+    const timer = setTimeout(() => setLoading(false), 3500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -614,7 +614,7 @@ export default function Home() {
             <motion.div
               initial={{ x: 0 }}
               exit={{ x: "-100%" }}
-              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 1.8, ease: [0.22, 1, 0.36, 1] }}
               className="fixed top-0 left-0 w-1/2 h-full z-[100]"
               style={{ backgroundColor: '#3D2B1F' }}
             />
@@ -622,7 +622,7 @@ export default function Home() {
             <motion.div
               initial={{ x: 0 }}
               exit={{ x: "100%" }}
-              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 1.8, ease: [0.22, 1, 0.36, 1] }}
               className="fixed top-0 right-0 w-1/2 h-full z-[100]"
               style={{ backgroundColor: '#3D2B1F' }}
             />
