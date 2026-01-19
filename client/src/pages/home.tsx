@@ -614,7 +614,7 @@ export default function Home() {
             <motion.div
               initial={{ x: 0 }}
               exit={{ x: "-100%" }}
-              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
               className="fixed top-0 left-0 w-1/2 h-full z-[100]"
               style={{ backgroundColor: '#3D2B1F' }}
             />
@@ -622,7 +622,7 @@ export default function Home() {
             <motion.div
               initial={{ x: 0 }}
               exit={{ x: "100%" }}
-              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
               className="fixed top-0 right-0 w-1/2 h-full z-[100]"
               style={{ backgroundColor: '#3D2B1F' }}
             />
