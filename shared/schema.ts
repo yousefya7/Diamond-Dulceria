@@ -33,6 +33,7 @@ export const products = pgTable("products", {
   isCustom: boolean("is_custom").notNull().default(false),
   trending: boolean("trending").notNull().default(false),
   active: boolean("active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

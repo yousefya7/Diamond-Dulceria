@@ -100,7 +100,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllProducts(): Promise<Product[]> {
-    return await db.select().from(products).orderBy(desc(products.createdAt));
+    return await db.select().from(products).orderBy(asc(products.sortOrder), desc(products.createdAt));
   }
 
   async updateProduct(id: string, updates: Partial<InsertProduct>): Promise<Product | undefined> {
