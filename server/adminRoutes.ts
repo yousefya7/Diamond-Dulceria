@@ -3,6 +3,33 @@ import { storage } from "./storage";
 import { insertProductSchema, insertCategorySchema } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import { sendEmail, sendStatusChangeEmail } from "./email";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+const uploadDir = "public/uploads/products";
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const productImageStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, uploadDir),
+  filename: (_req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const uploadProductImage = multer({
+  storage: productImageStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = /jpeg|jpg|png|gif|webp/;
+    const ext = allowed.test(path.extname(file.originalname).toLowerCase());
+    const mime = allowed.test(file.mimetype);
+    cb(null, ext && mime);
+  },
+});
 
 const ADMIN_SESSION_SECRET = process.env.ADMIN_SESSION_SECRET || "diamond-dulceria-admin-2024";
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "dymonlhf@gmail.com";
@@ -242,6 +269,19 @@ export function registerAdminRoutes(app: Express) {
     } catch (error: any) {
       console.error("Error fetching products:", error);
       res.status(500).json({ error: "Failed to fetch products" });
+    }
+  });
+
+  app.post("/api/admin/upload-image", verifyAdminAuth, uploadProductImage.single("image"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No image file provided" });
+      }
+      const imageUrl = `/uploads/products/${req.file.filename}`;
+      res.json({ success: true, imageUrl });
+    } catch (error: any) {
+      console.error("Error uploading image:", error);
+      res.status(500).json({ error: "Failed to upload image" });
     }
   });
 

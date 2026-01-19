@@ -1399,13 +1399,43 @@ function ProductModal({ product, token, onClose, onSuccess }: {
           </div>
 
           <div>
-            <label className="block text-sm text-[#3D2B1F]/70 mb-1">Image URL</label>
+            <label className="block text-sm text-[#3D2B1F]/70 mb-1">Product Image</label>
+            <div className="flex gap-2 mb-2">
+              <input
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const formData = new FormData();
+                  formData.append("image", file);
+                  try {
+                    const res = await fetch("/api/admin/upload-image", {
+                      method: "POST",
+                      headers: { Authorization: `Bearer ${token}` },
+                      body: formData,
+                    });
+                    const data = await res.json();
+                    if (data.success && data.imageUrl) {
+                      setImage(data.imageUrl);
+                      toast({ title: "Image uploaded!" });
+                    } else {
+                      toast({ title: "Upload failed", variant: "destructive" });
+                    }
+                  } catch {
+                    toast({ title: "Upload error", variant: "destructive" });
+                  }
+                }}
+                className="flex-1 px-3 py-2 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F] text-sm"
+                data-testid="input-product-image-upload"
+              />
+            </div>
             <input
               type="text"
               value={image}
               onChange={(e) => setImage(e.target.value)}
-              placeholder="/product-image.jpg or https://..."
-              className="w-full px-4 py-2 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F]"
+              placeholder="Or paste image URL..."
+              className="w-full px-4 py-2 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F] text-sm"
               data-testid="input-product-image"
             />
             {image && (
