@@ -939,14 +939,9 @@ export default function Home() {
                     </motion.div>
 
                     <div className={`grid grid-cols-2 ${categoryProducts.length <= 3 ? 'md:grid-cols-3' : 'md:grid-cols-4'} gap-4 sm:gap-6`}>
-                      {categoryProducts.map((product, index) => {
-                        const isLastOdd = categoryProducts.length % 2 === 1 && index === categoryProducts.length - 1;
-                        return (
-                          <div key={product.id} className={isLastOdd ? 'col-span-2 md:col-span-1 max-w-sm mx-auto w-full' : ''}>
-                            <ProductCard product={product} index={index} />
-                          </div>
-                        );
-                      })}
+                      {categoryProducts.map((product, index) => (
+                        <ProductCard key={product.id} product={product} index={index} />
+                      ))}
                     </div>
                   </div>
                 </section>
