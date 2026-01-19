@@ -161,6 +161,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<"overview" | "orders" | "products" | "categories" | "analytics" | "contacts" | "custom" | "settings">("overview");
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -192,10 +193,11 @@ export default function Dashboard() {
     if (showLoading) setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const [ordersRes, productsRes, statsRes] = await Promise.all([
+      const [ordersRes, productsRes, statsRes, categoriesRes] = await Promise.all([
         fetch("/api/admin/orders", { headers }),
         fetch("/api/admin/products", { headers }),
         fetch("/api/admin/stats", { headers }),
+        fetch("/api/admin/categories", { headers }),
       ]);
       
       if (ordersRes.status === 401) {
@@ -206,7 +208,11 @@ export default function Dashboard() {
       const ordersData = await ordersRes.json();
       const productsData = await productsRes.json();
       const statsData = await statsRes.json();
+      const categoriesData = await categoriesRes.json();
       
+      if (categoriesData.success) {
+        setAllCategories(categoriesData.categories.sort((a: Category, b: Category) => a.displayOrder - b.displayOrder));
+      }
       if (ordersData.success) {
         const sortedOrders = ordersData.orders.sort((a: Order, b: Order) => 
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -638,21 +644,19 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {['truffles', 'cookies', 'seasonal', 'custom'].map(category => {
+            {(allCategories.length > 0 ? allCategories : [{slug: 'truffles', name: 'Truffles'}, {slug: 'cookies', name: 'Cookies'}, {slug: 'seasonal', name: 'Seasonal'}, {slug: 'custom', name: 'Custom Creations'}]).map((cat: any) => {
               const categoryProducts = products.filter(p => {
-                const cat = p.category?.toLowerCase();
-                if (category === 'truffles') return cat === 'truffles' || cat === 'truffle';
-                if (category === 'cookies') return cat === 'cookies' || cat === 'cookie';
-                if (category === 'seasonal') return cat === 'seasonal';
-                if (category === 'custom') return cat === 'custom';
-                return false;
+                const pCat = p.category?.toLowerCase();
+                const slug = cat.slug?.toLowerCase() || cat;
+                const singular = slug.replace(/s$/, '');
+                return pCat === slug || pCat === singular;
               });
               if (categoryProducts.length === 0) return null;
               return (
-                <div key={category} className="mb-6">
+                <div key={cat.slug || cat} className="mb-6">
                   <h3 className="font-display text-lg text-[#3D2B1F] mb-3 capitalize flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
-                    {category === 'truffles' ? 'Truffles' : category === 'cookies' ? 'Cookies' : category === 'seasonal' ? 'Seasonal' : 'Custom Creations'}
+                    {cat.name || cat}
                     <span className="text-sm text-[#3D2B1F]/50 font-normal">({categoryProducts.length})</span>
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
@@ -855,6 +859,7 @@ export default function Dashboard() {
           <ProductModal
             product={editingProduct}
             token={token}
+            categories={allCategories}
             onClose={() => { setShowProductModal(false); setEditingProduct(null); }}
             onSuccess={() => { setShowProductModal(false); setEditingProduct(null); fetchData(false); }}
           />
@@ -1246,9 +1251,10 @@ function ContactModal({ order, token, onClose, onSuccess }: {
   );
 }
 
-function ProductModal({ product, token, onClose, onSuccess }: {
+function ProductModal({ product, token, categories, onClose, onSuccess }: {
   product: Product | null;
   token: string;
+  categories: Category[];
   onClose: () => void;
   onSuccess: () => void;
 }) {
@@ -1256,7 +1262,7 @@ function ProductModal({ product, token, onClose, onSuccess }: {
   const [description, setDescription] = useState(product?.description || "");
   const [price, setPrice] = useState(product?.price.toString() || "");
   const [batch, setBatch] = useState(product?.batch.toString() || "1");
-  const [category, setCategory] = useState(product?.category || "truffles");
+  const [category, setCategory] = useState(product?.category || (categories.length > 0 ? categories[0].slug.replace(/s$/, '') : "truffles"));
   const [image, setImage] = useState(product?.image || "");
   const [isCustom, setIsCustom] = useState(product?.isCustom || false);
   const [trending, setTrending] = useState(product?.trending || false);
@@ -1391,10 +1397,20 @@ function ProductModal({ product, token, onClose, onSuccess }: {
               className="w-full px-4 py-2 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F]"
               data-testid="select-product-category"
             >
-              <option value="truffles">Truffles</option>
-              <option value="cookies">Cookies</option>
-              <option value="seasonal">Seasonal</option>
-              <option value="custom">Custom Creations</option>
+              {categories.length > 0 ? (
+                categories.map((cat) => (
+                  <option key={cat.id} value={cat.slug.replace(/s$/, '')}>
+                    {cat.name}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="truffles">Truffles</option>
+                  <option value="cookies">Cookies</option>
+                  <option value="seasonal">Seasonal</option>
+                  <option value="custom">Custom Creations</option>
+                </>
+              )}
             </select>
           </div>
 
