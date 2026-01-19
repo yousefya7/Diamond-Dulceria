@@ -28,7 +28,8 @@ A luxury, mobile-first e-commerce website for Diamond Dulceria (Estd. 2025), a p
 
 ## Admin Dashboard Features
 - Order management (view, update status, add notes, delete)
-- Product management (add, edit, delete, image URLs, category grouping)
+- Product management (add, edit, delete, **direct image uploads**, category grouping)
+- **Image uploads** - Upload images directly from computer (stored in /uploads/products)
 - **Categories management** (add, edit, delete, reorder categories)
 - Customer contacts (view all customers, email directly)
 - Custom orders (approve/decline, send quotes)
