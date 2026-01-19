@@ -249,7 +249,7 @@ const DiamondLogo = ({ className = "", gold = false }: { className?: string; gol
 );
 
 export default function Home() {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>(defaultProducts);
   const [categories, setCategories] = useState<Category[]>([]);
   const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
@@ -364,7 +364,8 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // No loading delay - show content immediately
+    const timer = setTimeout(() => setLoading(false), 1000);
+    return () => clearTimeout(timer);
   }, []);
 
   // Prepare payment intent when checkout modal opens
