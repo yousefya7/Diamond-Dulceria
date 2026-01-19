@@ -370,14 +370,26 @@ export default function Home() {
 
   // Prepare payment intent when checkout modal opens
   useEffect(() => {
-    if (checkoutModalOpen && cart.length > 0 && !clientSecret) {
+    if (checkoutModalOpen && cart.length > 0 && !clientSecret && !paymentError) {
       console.log('Preparing payment with cart:', cart);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      
       fetch('/api/checkout/prepare-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items: cart }),
+        signal: controller.signal,
       })
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) {
+            return res.json().then(data => {
+              throw new Error(data.error || `Server error: ${res.status}`);
+            });
+          }
+          return res.json();
+        })
         .then(data => {
           console.log('Prepare payment response:', data);
           if (data.clientSecret) {
@@ -390,10 +402,22 @@ export default function Home() {
         })
         .catch(err => {
           console.error('Error preparing payment:', err);
-          setPaymentError('Failed to initialize payment. Please try again.');
+          if (err.name === 'AbortError') {
+            setPaymentError('Payment initialization timed out. Please try again.');
+          } else {
+            setPaymentError(err.message || 'Failed to initialize payment. Please try again.');
+          }
+        })
+        .finally(() => {
+          clearTimeout(timeoutId);
         });
+        
+      return () => {
+        clearTimeout(timeoutId);
+        controller.abort();
+      };
     }
-  }, [checkoutModalOpen, cart, clientSecret]);
+  }, [checkoutModalOpen, cart, clientSecret, paymentError]);
 
   useEffect(() => {
     localStorage.setItem('diamond-cart', JSON.stringify(cart));
@@ -1426,11 +1450,31 @@ export default function Home() {
                 ) : (
                   <div className="flex-1 flex items-center justify-center p-8">
                     <div className="text-center">
-                      <svg className="animate-spin h-8 w-8 text-[#3D2B1F] mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      <p className="text-[#3D2B1F]/60 text-sm">Loading payment form...</p>
+                      {paymentError ? (
+                        <>
+                          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <X className="w-8 h-8 text-red-500" />
+                          </div>
+                          <p className="text-red-600 text-sm mb-4">{paymentError}</p>
+                          <button
+                            onClick={() => {
+                              setPaymentError(null);
+                              setClientSecret(null);
+                            }}
+                            className="px-6 py-2 bg-[#3D2B1F] text-white rounded-full text-sm hover:bg-[#2a1e15] transition-colors"
+                          >
+                            Try Again
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="animate-spin h-8 w-8 text-[#3D2B1F] mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <p className="text-[#3D2B1F]/60 text-sm">Loading payment form...</p>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
