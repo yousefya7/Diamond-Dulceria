@@ -6,6 +6,9 @@ import { sendEmail, sendStatusChangeEmail } from "./email";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { ObjectStorageService } from "./replit_integrations/object_storage";
+
+const objectStorageService = new ObjectStorageService();
 
 const uploadDir = "public/uploads/products";
 if (!fs.existsSync(uploadDir)) {
@@ -282,6 +285,39 @@ export function registerAdminRoutes(app: Express) {
     } catch (error: any) {
       console.error("Error uploading image:", error);
       res.status(500).json({ error: "Failed to upload image" });
+    }
+  });
+
+  app.post("/api/admin/request-upload-url", verifyAdminAuth, async (req, res) => {
+    try {
+      const { name, contentType } = req.body;
+      if (!name) {
+        return res.status(400).json({ error: "Missing file name" });
+      }
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+      res.json({ success: true, uploadURL, objectPath, metadata: { name, contentType } });
+    } catch (error: any) {
+      console.error("Error generating upload URL:", error);
+      res.status(500).json({ error: "Failed to generate upload URL" });
+    }
+  });
+
+  app.post("/api/admin/finalize-upload", verifyAdminAuth, async (req, res) => {
+    try {
+      const { objectPath } = req.body;
+      if (!objectPath) {
+        return res.status(400).json({ error: "Missing object path" });
+      }
+      const normalizedPath = objectStorageService.normalizeObjectEntityPath(objectPath);
+      await objectStorageService.trySetObjectEntityAclPolicy(normalizedPath, {
+        owner: "admin",
+        visibility: "public",
+      });
+      res.json({ success: true, imageUrl: normalizedPath });
+    } catch (error: any) {
+      console.error("Error finalizing upload:", error);
+      res.status(500).json({ error: "Failed to finalize upload" });
     }
   });
 

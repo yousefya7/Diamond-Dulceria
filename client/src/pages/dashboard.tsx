@@ -1423,17 +1423,40 @@ function ProductModal({ product, token, categories, onClose, onSuccess }: {
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
-                  const formData = new FormData();
-                  formData.append("image", file);
                   try {
-                    const res = await fetch("/api/admin/upload-image", {
+                    toast({ title: "Uploading..." });
+                    const urlRes = await fetch("/api/admin/request-upload-url", {
                       method: "POST",
-                      headers: { Authorization: `Bearer ${token}` },
-                      body: formData,
+                      headers: { 
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}` 
+                      },
+                      body: JSON.stringify({
+                        name: file.name,
+                        contentType: file.type,
+                      }),
                     });
-                    const data = await res.json();
-                    if (data.success && data.imageUrl) {
-                      setImage(data.imageUrl);
+                    const urlData = await urlRes.json();
+                    if (!urlData.success || !urlData.uploadURL) {
+                      toast({ title: "Failed to get upload URL", variant: "destructive" });
+                      return;
+                    }
+                    await fetch(urlData.uploadURL, {
+                      method: "PUT",
+                      body: file,
+                      headers: { "Content-Type": file.type },
+                    });
+                    const finalizeRes = await fetch("/api/admin/finalize-upload", {
+                      method: "POST",
+                      headers: { 
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}` 
+                      },
+                      body: JSON.stringify({ objectPath: urlData.objectPath }),
+                    });
+                    const finalizeData = await finalizeRes.json();
+                    if (finalizeData.success && finalizeData.imageUrl) {
+                      setImage(finalizeData.imageUrl);
                       toast({ title: "Image uploaded!" });
                     } else {
                       toast({ title: "Upload failed", variant: "destructive" });

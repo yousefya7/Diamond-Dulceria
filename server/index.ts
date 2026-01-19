@@ -5,6 +5,7 @@ import { createServer } from "http";
 import { runMigrations } from 'stripe-replit-sync';
 import { getStripeSync } from "./stripeClient";
 import { WebhookHandlers } from "./webhookHandlers";
+import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 const app = express();
 const httpServer = createServer(app);
 
@@ -120,6 +121,9 @@ async function initStripe() {
 
   // Serve uploaded files
   app.use('/uploads', express.static('public/uploads'));
+
+  // Register object storage routes
+  registerObjectStorageRoutes(app);
 
   app.use((req, res, next) => {
     const start = Date.now();
