@@ -96,6 +96,47 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
+  app.post("/api/admin/reset-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ error: "Email required" });
+      }
+
+      if (email !== ADMIN_EMAIL) {
+        return res.status(400).json({ error: "Email not found" });
+      }
+
+      const newPassword = `DD${Date.now().toString(36).slice(-6)}`;
+      
+      await sendEmail({
+        to: email,
+        subject: "Diamond Dulceria - Password Reset",
+        html: `
+          <div style="font-family: 'Playfair Display', Georgia, serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #F9F1F1;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #3D2B1F; font-size: 28px; margin: 0;">Diamond Dulceria</h1>
+              <p style="color: #3D2B1F; opacity: 0.6; margin: 5px 0 0;">Password Reset</p>
+            </div>
+            <div style="background: white; padding: 30px; border-radius: 12px; border: 1px solid rgba(61, 43, 31, 0.1);">
+              <p style="color: #3D2B1F; font-size: 16px; line-height: 1.6;">Your password has been reset. Here is your new temporary password:</p>
+              <div style="background: #F4C2C2; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                <p style="color: #3D2B1F; font-size: 24px; font-weight: bold; margin: 0; letter-spacing: 2px;">${newPassword}</p>
+              </div>
+              <p style="color: #3D2B1F; font-size: 14px; opacity: 0.7;">For security, please update your password in the Settings tab after logging in.</p>
+            </div>
+          </div>
+        `,
+      });
+
+      console.log(`Password reset for ${email}. New password: ${newPassword}`);
+      res.json({ success: true, message: "Password reset email sent" });
+    } catch (error: any) {
+      console.error("Password reset error:", error);
+      res.status(500).json({ error: "Failed to send reset email" });
+    }
+  });
+
   app.post("/api/admin/setup", async (req, res) => {
     try {
       const { email, password, name, setupKey } = req.body;

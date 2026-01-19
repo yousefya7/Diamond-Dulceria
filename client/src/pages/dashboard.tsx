@@ -5,7 +5,7 @@ import {
   MapPin, FileText, DollarSign, X, Send, Edit, Trash2, Plus,
   TrendingUp, Calendar, MessageSquare, Settings, Search, Bell,
   BarChart3, PieChart, Activity, Users, Sparkles, Check, XCircle, Layers,
-  GripVertical, ChevronUp, ChevronDown
+  GripVertical, ChevronUp, ChevronDown, Eye, EyeOff, KeyRound
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -73,7 +73,37 @@ function LoginForm({ onLogin }: { onLogin: (token: string, admin: any) => void }
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetSending, setResetSending] = useState(false);
   const { toast } = useToast();
+
+  const handleResetPassword = async () => {
+    if (!resetEmail) {
+      toast({ title: "Please enter your email", variant: "destructive" });
+      return;
+    }
+    setResetSending(true);
+    try {
+      const res = await fetch("/api/admin/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "Password reset email sent!", description: "Check your inbox for your new password." });
+        setShowResetModal(false);
+        setResetEmail("");
+      } else {
+        toast({ title: data.error || "Failed to send reset email", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Connection error", variant: "destructive" });
+    }
+    setResetSending(false);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,15 +157,34 @@ function LoginForm({ onLogin }: { onLogin: (token: string, admin: any) => void }
           </div>
           <div>
             <label className="block text-sm text-[#3D2B1F]/70 mb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F]"
-              data-testid="input-password"
-              required
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 pr-12 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F]"
+                data-testid="input-password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3D2B1F]/50 hover:text-[#3D2B1F]"
+                data-testid="button-toggle-password"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={() => setShowResetModal(true)}
+            className="text-sm text-[#D4AF37] hover:text-[#3D2B1F] text-left"
+            data-testid="button-forgot-password"
+          >
+            <KeyRound className="w-3 h-3 inline mr-1" />
+            Forgot Password?
+          </button>
           {error && <p className="text-red-600 text-sm">{error}</p>}
           <button
             type="submit"
@@ -151,6 +200,62 @@ function LoginForm({ onLogin }: { onLogin: (token: string, admin: any) => void }
           <ArrowLeft className="w-4 h-4 inline mr-1" /> Back to Store
         </a>
       </motion.div>
+
+      <AnimatePresence>
+        {showResetModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+            onClick={() => setShowResetModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md p-6 rounded-2xl shadow-xl"
+              style={{ backgroundColor: '#F9F1F1' }}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="font-display text-xl text-[#3D2B1F]">Reset Password</h2>
+                <button onClick={() => setShowResetModal(false)} className="text-[#3D2B1F]/50 hover:text-[#3D2B1F]">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-sm text-[#3D2B1F]/70 mb-4">
+                Enter your admin email address and we'll send you a new password.
+              </p>
+              <input
+                type="email"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                placeholder="Enter your email"
+                className="w-full px-4 py-3 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F] mb-4"
+                data-testid="input-reset-email"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowResetModal(false)}
+                  className="flex-1 py-2 rounded-lg bg-[#3D2B1F]/10 text-[#3D2B1F]"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleResetPassword}
+                  disabled={resetSending}
+                  className="flex-1 py-2 rounded-lg text-white disabled:opacity-50"
+                  style={{ backgroundColor: '#D4AF37' }}
+                  data-testid="button-send-reset"
+                >
+                  {resetSending ? "Sending..." : "Send Reset Email"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

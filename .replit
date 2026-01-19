@@ -51,4 +51,4 @@ integrations = ["stripe:2.0.0", "javascript_object_storage:2.0.0"]
 [userenv.shared]
 OWNER_EMAIL = "yousefasmar2005@gmail.com"
 ADMIN_EMAIL = "dymonlhf@gmail.com"
-ADMIN_PASSWORD = "Dymon1234"
+ADMIN_PASSWORD = "Dymon2004"
