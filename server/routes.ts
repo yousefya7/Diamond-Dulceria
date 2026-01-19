@@ -74,6 +74,7 @@ export async function registerRoutes(
   app.post("/api/checkout/prepare-payment", async (req, res) => {
     try {
       const { items } = req.body;
+      console.log("Prepare payment request:", JSON.stringify(items));
       
       if (!items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: "Items are required" });
@@ -81,7 +82,8 @@ export async function registerRoutes(
 
       // Validate prices server-side from database
       const dbProducts = await storage.getAllProducts();
-      const productPriceMap = new Map(dbProducts.map(p => [String(p.id), p.price]));
+      const productIdMap = new Map(dbProducts.map(p => [String(p.id), p]));
+      const productNameMap = new Map(dbProducts.map(p => [p.name.toLowerCase(), p]));
       
       let total = 0;
       const validatedItems = [];
@@ -92,14 +94,21 @@ export async function registerRoutes(
         }
         
         const itemId = String(item.id);
-        const dbPrice = productPriceMap.get(itemId);
-        if (dbPrice === undefined) {
-          return res.status(400).json({ error: `Product not found: ${itemId}` });
+        let dbProduct = productIdMap.get(itemId);
+        
+        // Fallback: match by name if ID not found (for legacy cart items)
+        if (!dbProduct && item.name) {
+          dbProduct = productNameMap.get(item.name.toLowerCase());
         }
         
-        const price = Number(dbPrice);
+        if (!dbProduct) {
+          console.log(`Product not found for item: ${JSON.stringify(item)}`);
+          return res.status(400).json({ error: `Product not found: ${item.name || itemId}` });
+        }
+        
+        const price = Number(dbProduct.price);
         total += price * item.quantity;
-        validatedItems.push({ ...item, id: itemId, price });
+        validatedItems.push({ ...item, id: dbProduct.id, price });
       }
 
       const stripe = await getUncachableStripeClient();
@@ -150,20 +159,29 @@ export async function registerRoutes(
 
       // Validate prices server-side from database
       const dbProducts = await storage.getAllProducts();
-      const productPriceMap = new Map(dbProducts.map(p => [String(p.id), p.price]));
+      const productIdMap = new Map(dbProducts.map(p => [String(p.id), p]));
+      const productNameMap = new Map(dbProducts.map(p => [p.name.toLowerCase(), p]));
       
       let total = 0;
       const validatedItems = [];
       
       for (const item of items) {
         const itemId = String(item.id);
-        const dbPrice = productPriceMap.get(itemId);
-        if (dbPrice === undefined) {
-          return res.status(400).json({ error: `Product not found: ${itemId}` });
+        let dbProduct = productIdMap.get(itemId);
+        
+        // Fallback: match by name if ID not found (for legacy cart items)
+        if (!dbProduct && item.name) {
+          dbProduct = productNameMap.get(item.name.toLowerCase());
         }
-        const price = Number(dbPrice);
+        
+        if (!dbProduct) {
+          console.log(`Complete order - Product not found: ${JSON.stringify(item)}`);
+          return res.status(400).json({ error: `Product not found: ${item.name || itemId}` });
+        }
+        
+        const price = Number(dbProduct.price);
         total += price * item.quantity;
-        validatedItems.push({ ...item, id: itemId, price });
+        validatedItems.push({ ...item, id: dbProduct.id, price });
       }
       
       // Verify PaymentIntent amount matches calculated total

@@ -371,6 +371,7 @@ export default function Home() {
   // Prepare payment intent when checkout modal opens
   useEffect(() => {
     if (checkoutModalOpen && cart.length > 0 && !clientSecret) {
+      console.log('Preparing payment with cart:', cart);
       fetch('/api/checkout/prepare-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -378,12 +379,19 @@ export default function Home() {
       })
         .then(res => res.json())
         .then(data => {
+          console.log('Prepare payment response:', data);
           if (data.clientSecret) {
             setClientSecret(data.clientSecret);
             setCurrentPaymentIntentId(data.paymentIntentId);
+          } else if (data.error) {
+            console.error('Prepare payment error:', data.error);
+            setPaymentError(data.error);
           }
         })
-        .catch(err => console.error('Error preparing payment:', err));
+        .catch(err => {
+          console.error('Error preparing payment:', err);
+          setPaymentError('Failed to initialize payment. Please try again.');
+        });
     }
   }, [checkoutModalOpen, cart, clientSecret]);
 
