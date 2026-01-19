@@ -313,8 +313,9 @@ export default function Home() {
   ];
 
   const allCategories = categories.length > 0 ? categories : defaultCategories;
-  const visibleCategories = allCategories.filter(cat => cat.active && (cat.slug === 'custom' || getProductsBySlug(cat.slug).length > 0));
-  const firstCategorySlug = visibleCategories.length > 0 ? visibleCategories[0].slug : 'truffles';
+  const visibleCategories = allCategories.filter(cat => cat.active);
+  const categoriesWithProducts = visibleCategories.filter(cat => cat.slug === 'custom' || getProductsBySlug(cat.slug).length > 0);
+  const firstCategorySlug = categoriesWithProducts.length > 0 ? categoriesWithProducts[0].slug : 'truffles';
 
   useEffect(() => {
     fetch('/api/products')
@@ -967,6 +968,9 @@ export default function Home() {
           const isCustomCategory = cat.slug === 'custom';
           
           if (!cat.active) return null;
+          
+          // Skip rendering empty sections (except custom which always shows)
+          if (!isCustomCategory && categoryProducts.length === 0) return null;
           
           return (
             <div key={cat.id}>
