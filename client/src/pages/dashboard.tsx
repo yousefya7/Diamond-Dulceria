@@ -37,6 +37,7 @@ type Product = {
   isCustom: boolean;
   trending: boolean;
   active: boolean;
+  sortOrder: number;
   createdAt: string;
 };
 
@@ -671,7 +672,7 @@ export default function Dashboard() {
                             )}
                             <div className="min-w-0 flex-1">
                               <h3 className="font-display text-[#3D2B1F] truncate">{product.name}</h3>
-                              <p className="text-xs text-[#3D2B1F]/60">Batch: {product.batch}</p>
+                              <p className="text-xs text-[#3D2B1F]/60">Batch: {product.batch} | Order: {product.sortOrder}</p>
                             </div>
                           </div>
                           <button 
@@ -1260,6 +1261,7 @@ function ProductModal({ product, token, onClose, onSuccess }: {
   const [isCustom, setIsCustom] = useState(product?.isCustom || false);
   const [trending, setTrending] = useState(product?.trending || false);
   const [active, setActive] = useState(product?.active ?? true);
+  const [sortOrder, setSortOrder] = useState(product?.sortOrder?.toString() || "0");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const { toast } = useToast();
@@ -1275,7 +1277,7 @@ function ProductModal({ product, token, onClose, onSuccess }: {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           name, description, price: parseInt(price), batch: parseInt(batch),
-          category, image: image || null, isCustom, trending, active
+          category, image: image || null, isCustom, trending, active, sortOrder: parseInt(sortOrder)
         }),
       });
       if (res.ok) {
@@ -1347,7 +1349,7 @@ function ProductModal({ product, token, onClose, onSuccess }: {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-sm text-[#3D2B1F]/70 mb-1">Price ($)</label>
               <input
@@ -1366,6 +1368,17 @@ function ProductModal({ product, token, onClose, onSuccess }: {
                 onChange={(e) => setBatch(e.target.value)}
                 className="w-full px-4 py-2 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F]"
                 data-testid="input-product-batch"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-[#3D2B1F]/70 mb-1">Sort Order</label>
+              <input
+                type="number"
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                min="0"
+                className="w-full px-4 py-2 rounded-lg border border-[#3D2B1F]/20 focus:border-[#D4AF37] focus:outline-none bg-white text-[#3D2B1F]"
+                data-testid="input-product-sort-order"
               />
             </div>
           </div>
