@@ -249,7 +249,7 @@ const DiamondLogo = ({ className = "", gold = false }: { className?: string; gol
 );
 
 export default function Home() {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState<Product[]>(defaultProducts);
   const [categories, setCategories] = useState<Category[]>([]);
   const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
@@ -364,8 +364,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 2000);
-    return () => clearTimeout(timer);
+    // No loading delay - show content immediately
   }, []);
 
   // Prepare payment intent when checkout modal opens
@@ -678,7 +677,7 @@ export default function Home() {
         <motion.header
           initial={{ y: -100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6, delay: loading ? 0 : 2.2, ease: "easeOut" }}
+          transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
           className="sticky top-0 z-40 shadow-lg"
           style={{ backgroundColor: '#3D2B1F' }}
         >
@@ -714,7 +713,7 @@ export default function Home() {
         <motion.nav
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, delay: loading ? 0 : 2.3, ease: "easeOut" }}
+          transition={{ duration: 0.4, delay: 0.15, ease: "easeOut" }}
           className="sticky top-[72px] sm:top-24 z-30 border-b border-[#3D2B1F]/10"
           style={{ backgroundColor: '#F4C2C2' }}
         >
@@ -768,7 +767,7 @@ export default function Home() {
             <motion.div 
               initial={{ opacity: 0, rotate: -15 }}
               animate={{ opacity: 0.6, rotate: 0 }}
-              transition={{ duration: 1.5, delay: 2.8 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
               className="absolute top-[15%] left-[8%] text-[#D4AF37]/40"
             >
               <svg width="40" height="50" viewBox="0 0 40 50" fill="currentColor">
@@ -780,7 +779,7 @@ export default function Home() {
             <motion.div 
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 0.5, y: 0 }}
-              transition={{ duration: 1.2, delay: 3 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
               className="absolute top-[20%] right-[10%] text-[#3D2B1F]/25"
             >
               <svg width="35" height="50" viewBox="0 0 35 50" fill="currentColor">
@@ -793,7 +792,7 @@ export default function Home() {
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 0.3 }}
-              transition={{ duration: 1, delay: 3.2 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
               className="absolute bottom-[25%] left-[5%] text-[#3D2B1F]/20"
             >
               <svg width="60" height="80" viewBox="0 0 60 80" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
@@ -806,7 +805,7 @@ export default function Home() {
             <motion.div 
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 0.5, scale: 1 }}
-              transition={{ duration: 1.3, delay: 3.1 }}
+              transition={{ duration: 0.5, delay: 0.25 }}
               className="absolute bottom-[18%] right-[12%] text-[#D4AF37]/30"
             >
               <svg width="30" height="35" viewBox="0 0 30 35" fill="currentColor">
@@ -818,7 +817,7 @@ export default function Home() {
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 0.35 }}
-              transition={{ duration: 1.5, delay: 3.3 }}
+              transition={{ duration: 0.5, delay: 0.35 }}
               className="absolute top-[45%] left-[3%] text-[#3D2B1F]/20"
             >
               <svg width="25" height="35" viewBox="0 0 35 50" fill="currentColor">
@@ -831,7 +830,7 @@ export default function Home() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: loading ? 0 : 2.4 }}
+              transition={{ duration: 0.4, delay: 0.4 }}
             >
               <DiamondLogo className="w-16 h-16 sm:w-20 sm:h-20 text-[#3D2B1F] mx-auto mb-6" />
               
@@ -860,7 +859,7 @@ export default function Home() {
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: loading ? 0.5 : 3 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
             className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer"
             onClick={() => document.getElementById(firstCategorySlug)?.scrollIntoView({ behavior: 'smooth' })}
           >
