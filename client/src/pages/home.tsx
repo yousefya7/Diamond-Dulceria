@@ -283,6 +283,7 @@ export default function Home() {
   const [currentPaymentIntentId, setCurrentPaymentIntentId] = useState<string | null>(null);
   const [paymentElementReady, setPaymentElementReady] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [skipPayment, setSkipPayment] = useState(false);
 
   const truffles = useMemo(() => products.filter(p => p.category === "truffle" || p.category === "truffles"), [products]);
   const cookies = useMemo(() => products.filter(p => p.category === "cookie" || p.category === "cookies"), [products]);
@@ -392,7 +393,12 @@ export default function Home() {
         })
         .then(data => {
           console.log('Prepare payment response:', data);
-          if (data.clientSecret) {
+          if (data.skipPayment) {
+            setSkipPayment(true);
+            setClientSecret(null);
+            setCurrentPaymentIntentId(null);
+          } else if (data.clientSecret) {
+            setSkipPayment(false);
             setClientSecret(data.clientSecret);
             setCurrentPaymentIntentId(data.paymentIntentId);
           } else if (data.error) {
@@ -519,6 +525,48 @@ export default function Home() {
       
     } catch (error: any) {
       console.error('Error processing order:', error);
+      setPaymentError(error.message || 'An error occurred. Please try again.');
+    } finally {
+      setPaymentProcessing(false);
+    }
+  };
+
+  // Handle $0 order submission (custom orders only)
+  const handleFreeOrderSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      setPaymentProcessing(true);
+      setPaymentError(null);
+      
+      const response = await fetch('/api/checkout/submit-free-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerName: checkoutForm.name,
+          customerEmail: checkoutForm.email,
+          customerPhone: checkoutForm.phone,
+          deliveryAddress: `${checkoutForm.street}, ${checkoutForm.city}, ${checkoutForm.state} ${checkoutForm.zip}`,
+          specialInstructions: checkoutForm.notes || null,
+          items: cart,
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        console.error('Order creation failed:', data);
+        setPaymentError(data.error || 'Failed to submit order. Please try again.');
+        return;
+      }
+      
+      // Success! Clear cart and show confirmation
+      setCart([]);
+      localStorage.removeItem('diamond-cart');
+      setOrderPlaced(true);
+      
+    } catch (error: any) {
+      console.error('Error submitting order:', error);
       setPaymentError(error.message || 'An error occurred. Please try again.');
     } finally {
       setPaymentProcessing(false);
@@ -1254,10 +1302,14 @@ export default function Home() {
                       <Sparkles className="w-10 h-10 text-[#D4AF37]" />
                     </div>
                     <h4 className="font-display text-2xl text-[#3D2B1F] mb-3 tracking-wide">
-                      Payment Successful!
+                      {skipPayment ? 'Request Submitted!' : 'Payment Successful!'}
                     </h4>
                     <p className="text-[#3D2B1F]/60 mb-4">
-                      Thank you for your payment!<br/>We'll contact you shortly when your order is ready for pickup.
+                      {skipPayment ? (
+                        <>Thank you for your request!<br/>We'll contact you shortly with a quote.</>
+                      ) : (
+                        <>Thank you for your payment!<br/>We'll contact you shortly when your order is ready for pickup.</>
+                      )}
                     </p>
                     <div className="p-4 bg-[#D4AF37]/10 rounded-lg border border-[#D4AF37]/30 text-left mb-4">
                       <p className="text-[#3D2B1F] text-xs font-medium mb-2 uppercase tracking-wide">A confirmation email has been sent to:</p>
@@ -1271,6 +1323,7 @@ export default function Home() {
                         setCurrentPaymentIntentId(null);
                         setPaymentElementReady(false);
                         setPaymentError(null);
+                        setSkipPayment(false);
                         setCheckoutForm({ name: '', email: '', phone: '', street: '', city: '', state: '', zip: '', notes: '' });
                       }}
                       className="mt-6 px-8 py-3 bg-[#3D2B1F] text-[#F9F1F1] font-display tracking-wide rounded-full hover:bg-[#2a1e15] transition-colors"
@@ -1278,6 +1331,137 @@ export default function Home() {
                       CONTINUE SHOPPING
                     </button>
                   </div>
+                ) : skipPayment ? (
+                  <form onSubmit={handleFreeOrderSubmit} className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-5">
+                    <div className="p-4 bg-[#D4AF37]/10 rounded-lg border border-[#D4AF37]/30 mb-4">
+                      <p className="text-[#3D2B1F] text-sm text-center font-medium">
+                        Custom Order Request - No payment required now. We'll contact you with a quote!
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">
+                        Full Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={checkoutForm.name}
+                        onChange={(e) => setCheckoutForm(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] rounded-lg"
+                        placeholder="Jane Doe"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      <div>
+                        <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">
+                          Phone Number <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="tel"
+                          required
+                          value={checkoutForm.phone}
+                          onChange={(e) => setCheckoutForm(prev => ({ ...prev, phone: e.target.value }))}
+                          className="w-full px-4 py-3 bg-white border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] rounded-lg"
+                          placeholder="(555) 123-4567"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">Email <span className="text-red-500">*</span></label>
+                        <input
+                          type="email"
+                          required
+                          value={checkoutForm.email}
+                          onChange={(e) => setCheckoutForm(prev => ({ ...prev, email: e.target.value }))}
+                          className="w-full px-4 py-3 bg-white border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] rounded-lg"
+                          placeholder="jane@email.com"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h4 className="text-[#3D2B1F] font-display tracking-wide text-sm">
+                        Contact Address
+                      </h4>
+                      <div>
+                        <label className="block text-[#3D2B1F]/70 text-xs mb-1">Street Address</label>
+                        <input
+                          type="text"
+                          value={checkoutForm.street}
+                          onChange={(e) => setCheckoutForm(prev => ({ ...prev, street: e.target.value }))}
+                          className="w-full px-4 py-3 bg-white border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] rounded-lg"
+                          placeholder="123 Main Street (optional)"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <div className="col-span-2 sm:col-span-1">
+                          <label className="block text-[#3D2B1F]/70 text-xs mb-1">City</label>
+                          <input
+                            type="text"
+                            value={checkoutForm.city}
+                            onChange={(e) => setCheckoutForm(prev => ({ ...prev, city: e.target.value }))}
+                            className="w-full px-4 py-3 bg-white border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] rounded-lg"
+                            placeholder="City"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[#3D2B1F]/70 text-xs mb-1">State</label>
+                          <input
+                            type="text"
+                            value={checkoutForm.state}
+                            onChange={(e) => setCheckoutForm(prev => ({ ...prev, state: e.target.value }))}
+                            className="w-full px-4 py-3 bg-white border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] rounded-lg"
+                            placeholder="State"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[#3D2B1F]/70 text-xs mb-1">Zip Code</label>
+                          <input
+                            type="text"
+                            value={checkoutForm.zip}
+                            onChange={(e) => setCheckoutForm(prev => ({ ...prev, zip: e.target.value }))}
+                            className="w-full px-4 py-3 bg-white border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] rounded-lg"
+                            placeholder="12345"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">Special Instructions / Custom Details</label>
+                      <textarea
+                        value={checkoutForm.notes}
+                        onChange={(e) => setCheckoutForm(prev => ({ ...prev, notes: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white border border-[#3D2B1F]/20 focus:border-[#3D2B1F] outline-none transition-colors text-[#3D2B1F] resize-none rounded-lg"
+                        rows={3}
+                        placeholder="Describe your custom order details..."
+                      />
+                    </div>
+
+                    <div className="pt-2">
+                      {paymentError && (
+                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                          <p className="text-red-600 text-sm">{paymentError}</p>
+                        </div>
+                      )}
+                      
+                      <button
+                        type="submit"
+                        disabled={paymentProcessing}
+                        className="w-full py-4 bg-[#3D2B1F] hover:bg-[#2a1e15] text-[#F9F1F1] text-lg font-display tracking-[0.15em] rounded-full transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                      >
+                        {paymentProcessing ? (
+                          <>
+                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            SUBMITTING...
+                          </>
+                        ) : 'SUBMIT REQUEST'}
+                      </button>
+                    </div>
+                  </form>
                 ) : clientSecret && stripePromise ? (
                   <Elements 
                     stripe={stripePromise} 

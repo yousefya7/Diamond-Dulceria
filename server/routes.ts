@@ -111,6 +111,17 @@ export async function registerRoutes(
         validatedItems.push({ ...item, id: dbProduct.id, price });
       }
 
+      // If total is $0, skip payment (custom orders only)
+      if (total === 0) {
+        return res.json({ 
+          clientSecret: null,
+          paymentIntentId: null,
+          validatedTotal: 0,
+          validatedItems,
+          skipPayment: true
+        });
+      }
+
       const stripe = await getUncachableStripeClient();
       
       // Create a hash of item IDs for verification
@@ -130,7 +141,8 @@ export async function registerRoutes(
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
         validatedTotal: total,
-        validatedItems
+        validatedItems,
+        skipPayment: false
       });
     } catch (error: any) {
       console.error("Error preparing payment:", error);
@@ -239,6 +251,88 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error("Error completing order:", error);
       res.status(500).json({ error: error.message || "Failed to complete order" });
+    }
+  });
+
+  // Submit order without payment (for $0 custom orders only)
+  app.post("/api/checkout/submit-free-order", async (req, res) => {
+    try {
+      const { customerName, customerEmail, customerPhone, deliveryAddress, specialInstructions, items } = req.body;
+      
+      if (!customerName || !customerEmail) {
+        return res.status(400).json({ error: "Customer name and email are required" });
+      }
+
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: "Items are required" });
+      }
+
+      // Validate that total is actually $0
+      const dbProducts = await storage.getAllProducts();
+      const productIdMap = new Map(dbProducts.map(p => [String(p.id), p]));
+      const productNameMap = new Map(dbProducts.map(p => [p.name.toLowerCase(), p]));
+      
+      let total = 0;
+      const validatedItems = [];
+      
+      for (const item of items) {
+        const itemId = String(item.id);
+        let dbProduct = productIdMap.get(itemId);
+        
+        if (!dbProduct && item.name) {
+          dbProduct = productNameMap.get(item.name.toLowerCase());
+        }
+        
+        if (!dbProduct) {
+          return res.status(400).json({ error: `Product not found: ${item.name || itemId}` });
+        }
+        
+        const price = Number(dbProduct.price);
+        total += price * item.quantity;
+        validatedItems.push({ ...item, id: dbProduct.id, price });
+      }
+
+      // Only allow $0 orders through this endpoint
+      if (total > 0) {
+        return res.status(400).json({ error: "This endpoint is only for $0 orders. Please use regular checkout for paid orders." });
+      }
+
+      // Create order with pending status (custom orders need approval)
+      const order = await storage.createOrder({
+        customerName,
+        customerEmail,
+        customerPhone: customerPhone || '',
+        deliveryAddress: deliveryAddress || '',
+        specialInstructions: specialInstructions || null,
+        items: validatedItems,
+        total: 0,
+      });
+
+      // Send confirmation emails
+      const orderData = {
+        id: order.id,
+        customerName: order.customerName,
+        customerEmail: order.customerEmail,
+        customerPhone: order.customerPhone,
+        deliveryAddress: order.deliveryAddress,
+        specialInstructions: order.specialInstructions,
+        items: order.items,
+        total: order.total,
+      };
+      
+      try {
+        await Promise.all([
+          sendOrderNotification(orderData),
+          sendCustomerConfirmation(orderData),
+        ]);
+      } catch (emailError) {
+        console.error("Email error:", emailError);
+      }
+
+      res.json({ success: true, order });
+    } catch (error: any) {
+      console.error("Error submitting free order:", error);
+      res.status(500).json({ error: error.message || "Failed to submit order" });
     }
   });
 
