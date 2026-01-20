@@ -154,21 +154,21 @@ const defaultProducts: Product[] = [
 const reviews = [
   {
     id: 1,
-    name: "Sarah M.",
+    name: "Maleigha M.",
     review: "The Dubai Chocolate is life-changing! Best truffles I've ever had.",
     product: "Dubai Chocolate Truffles",
     image: "/review_dubai.jpg" // <!-- UPLOAD REVIEW IMAGE HERE -->
   },
   {
     id: 2,
-    name: "Jessica L.",
+    name: "Beeta B.",
     review: "The biscoff and strawberry shortcake truffles were amazing! Truly a work of art.",
     product: "Truffle Assortment",
     image: "/review_mix.jpg" // <!-- UPLOAD REVIEW IMAGE HERE -->
   },
   {
     id: 3,
-    name: "Amanda K.",
+    name: "Jayda T.",
     review: "The signature cookies are incredible and never fail to impress. Perfect every time.",
     product: "Signature Cookies",
     image: "/review_signature.jpg" // <!-- UPLOAD REVIEW IMAGE HERE -->
