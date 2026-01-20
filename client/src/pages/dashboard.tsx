@@ -2629,7 +2629,7 @@ function PromoCodesSection({ token, promoCodes, setPromoCodes }: { token: string
                   <td className="px-4 py-3 text-[#3D2B1F]">
                     {code.discountType === "percentage" 
                       ? `${code.discountValue}% off` 
-                      : `$${(code.discountValue / 100).toFixed(2)} off`}
+                      : `$${code.discountValue.toFixed(2)} off`}
                   </td>
                   <td className="px-4 py-3">
                     <button

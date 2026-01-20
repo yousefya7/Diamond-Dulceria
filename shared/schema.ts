@@ -102,7 +102,7 @@ export const promoCodes = pgTable("promo_codes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   code: text("code").notNull().unique(),
   discountType: text("discount_type").notNull(), // "percentage" or "fixed"
-  discountValue: integer("discount_value").notNull(), // percentage (1-100) or cents for fixed
+  discountValue: integer("discount_value").notNull(), // percentage (1-100) or dollars for fixed
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
