@@ -76,8 +76,8 @@ export async function registerRoutes(
       if (promoCode.discountType === "percentage") {
         discountAmount = Math.round((subtotal * promoCode.discountValue) / 100);
       } else {
-        // Fixed discount stored in cents, convert to dollars
-        discountAmount = promoCode.discountValue / 100;
+        // Fixed discount stored in dollars
+        discountAmount = promoCode.discountValue;
       }
       discountAmount = Math.min(discountAmount, subtotal);
       const newTotal = subtotal - discountAmount;
@@ -159,8 +159,8 @@ export async function registerRoutes(
           if (promo.discountType === "percentage") {
             validatedDiscount = Math.round((subtotal * promo.discountValue) / 100);
           } else {
-            // Fixed discount stored in cents, convert to dollars
-            validatedDiscount = promo.discountValue / 100;
+            // Fixed discount stored in dollars
+            validatedDiscount = promo.discountValue;
           }
           validatedDiscount = Math.min(validatedDiscount, subtotal);
           validatedPromoCode = promo.code;

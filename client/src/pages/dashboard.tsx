@@ -2715,7 +2715,7 @@ function PromoCodesSection({ token, promoCodes, setPromoCodes }: { token: string
 
                 <div>
                   <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
-                    {formData.discountType === "percentage" ? "Percentage Off" : "Amount Off (in cents)"}
+                    {formData.discountType === "percentage" ? "Percentage Off" : "Amount Off ($)"}
                   </label>
                   <div className="relative">
                     <input
