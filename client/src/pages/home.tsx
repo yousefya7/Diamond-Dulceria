@@ -1657,7 +1657,7 @@ export default function Home() {
                               <div className="flex items-center gap-2">
                                 <span className="text-green-700 font-mono font-bold">{promoDiscount.code}</span>
                                 <span className="text-green-600 text-sm">
-                                  ({promoDiscount.discountType === 'percentage' ? `${promoDiscount.discountValue}% off` : `$${(promoDiscount.discountValue / 100).toFixed(2)} off`})
+                                  ({promoDiscount.discountType === 'percentage' ? `${promoDiscount.discountValue}% off` : `$${promoDiscount.discountValue.toFixed(2)} off`})
                                 </span>
                               </div>
                               <button
