@@ -2722,12 +2722,12 @@ function PromoCodesSection({ token, promoCodes, setPromoCodes }: { token: string
                       type="number"
                       value={formData.discountValue}
                       onChange={(e) => setFormData({ ...formData, discountValue: e.target.value })}
-                      placeholder={formData.discountType === "percentage" ? "e.g. 20" : "e.g. 500 ($5.00)"}
+                      placeholder={formData.discountType === "percentage" ? "e.g. 20" : "e.g. 5"}
                       className="w-full px-3 py-2 border border-[#3D2B1F]/20 rounded-lg"
                       data-testid="input-discount-value"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3D2B1F]/40">
-                      {formData.discountType === "percentage" ? "%" : "¢"}
+                      {formData.discountType === "percentage" ? "%" : "$"}
                     </span>
                   </div>
                 </div>
