@@ -284,6 +284,10 @@ export default function Home() {
   const [paymentElementReady, setPaymentElementReady] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [skipPayment, setSkipPayment] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const [promoDiscount, setPromoDiscount] = useState<{ code: string; discountAmount: number; discountType: string; discountValue: number } | null>(null);
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
 
   const truffles = useMemo(() => products.filter(p => p.category === "truffle" || p.category === "truffles"), [products]);
   const cookies = useMemo(() => products.filter(p => p.category === "cookie" || p.category === "cookies"), [products]);
@@ -381,7 +385,11 @@ export default function Home() {
       fetch('/api/checkout/prepare-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: cart }),
+        body: JSON.stringify({ 
+          items: cart,
+          promoCode: promoDiscount?.code || null,
+          discountAmount: promoDiscount?.discountAmount || 0,
+        }),
         signal: controller.signal,
       })
         .then(res => {
@@ -606,6 +614,43 @@ export default function Home() {
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const finalTotal = promoDiscount ? Math.max(0, subtotal - promoDiscount.discountAmount) : subtotal;
+
+  const applyPromoCode = async () => {
+    if (!promoCode.trim()) return;
+    setPromoLoading(true);
+    setPromoError(null);
+    try {
+      const res = await fetch("/api/promo-code/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: promoCode.trim(), subtotal }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPromoDiscount({
+          code: data.promoCode.code,
+          discountAmount: data.discountAmount,
+          discountType: data.promoCode.discountType,
+          discountValue: data.promoCode.discountValue,
+        });
+        setPromoError(null);
+      } else {
+        setPromoError(data.error || "Invalid promo code");
+        setPromoDiscount(null);
+      }
+    } catch {
+      setPromoError("Failed to validate promo code");
+      setPromoDiscount(null);
+    }
+    setPromoLoading(false);
+  };
+
+  const removePromoCode = () => {
+    setPromoCode("");
+    setPromoDiscount(null);
+    setPromoError(null);
+  };
 
   const ProductCard = ({ product, index }: { product: typeof products[0]; index: number }) => (
     <motion.div
@@ -1328,6 +1373,9 @@ export default function Home() {
                         setPaymentElementReady(false);
                         setPaymentError(null);
                         setSkipPayment(false);
+                        setPromoCode("");
+                        setPromoDiscount(null);
+                        setPromoError(null);
                         setCheckoutForm({ name: '', email: '', phone: '', street: '', city: '', state: '', zip: '', notes: '' });
                       }}
                       className="mt-6 px-8 py-3 bg-[#3D2B1F] text-[#F9F1F1] font-display tracking-wide rounded-full hover:bg-[#2a1e15] transition-colors"
@@ -1601,9 +1649,68 @@ export default function Home() {
                       />
 
                       <div className="pt-2">
-                        <div className="flex justify-between items-center mb-3 text-[#3D2B1F]">
-                          <span className="text-sm opacity-60">Order Total</span>
-                          <span className="font-display text-xl">${subtotal}</span>
+                        {/* Promo Code Section */}
+                        <div className="mb-4 p-4 bg-white rounded-lg border border-[#3D2B1F]/10">
+                          <label className="block text-[#3D2B1F] font-display tracking-wide text-sm mb-2">Promo Code</label>
+                          {promoDiscount ? (
+                            <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-green-700 font-mono font-bold">{promoDiscount.code}</span>
+                                <span className="text-green-600 text-sm">
+                                  ({promoDiscount.discountType === 'percentage' ? `${promoDiscount.discountValue}% off` : `$${(promoDiscount.discountValue / 100).toFixed(2)} off`})
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={removePromoCode}
+                                className="text-red-500 hover:text-red-700 p-1"
+                                data-testid="button-remove-promo"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={promoCode}
+                                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                                placeholder="Enter code"
+                                className="flex-1 px-3 py-2 bg-[#F9F1F1] border border-[#3D2B1F]/20 rounded-lg text-[#3D2B1F] font-mono uppercase"
+                                data-testid="input-promo-code"
+                              />
+                              <button
+                                type="button"
+                                onClick={applyPromoCode}
+                                disabled={promoLoading || !promoCode.trim()}
+                                className="px-4 py-2 bg-[#3D2B1F] text-white rounded-lg disabled:opacity-50 hover:bg-[#2a1e15] transition-colors"
+                                data-testid="button-apply-promo"
+                              >
+                                {promoLoading ? "..." : "Apply"}
+                              </button>
+                            </div>
+                          )}
+                          {promoError && (
+                            <p className="text-red-500 text-xs mt-2">{promoError}</p>
+                          )}
+                        </div>
+
+                        {/* Order Summary */}
+                        <div className="mb-3 text-[#3D2B1F]">
+                          <div className="flex justify-between items-center text-sm opacity-60">
+                            <span>Subtotal</span>
+                            <span>${subtotal}</span>
+                          </div>
+                          {promoDiscount && (
+                            <div className="flex justify-between items-center text-sm text-green-600 mt-1">
+                              <span>Discount ({promoDiscount.code})</span>
+                              <span>-${promoDiscount.discountAmount}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between items-center mt-2 pt-2 border-t border-[#3D2B1F]/10">
+                            <span className="font-medium">Order Total</span>
+                            <span className="font-display text-xl">${finalTotal}</span>
+                          </div>
                         </div>
                         <div className="mb-4 p-3 bg-[#D4AF37]/10 rounded-lg border border-[#D4AF37]/30">
                           <p className="text-[#3D2B1F] text-xs text-center font-bold">

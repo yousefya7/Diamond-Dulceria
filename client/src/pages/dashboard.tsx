@@ -5,7 +5,7 @@ import {
   MapPin, FileText, DollarSign, X, Send, Edit, Trash2, Plus,
   TrendingUp, Calendar, MessageSquare, Settings, Search, Bell,
   BarChart3, PieChart, Activity, Users, Sparkles, Check, XCircle, Layers,
-  GripVertical, ChevronUp, ChevronDown, Eye, EyeOff, KeyRound
+  GripVertical, ChevronUp, ChevronDown, Eye, EyeOff, KeyRound, Ticket
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -48,6 +48,15 @@ type Category = {
   title: string;
   description: string | null;
   displayOrder: number;
+  active: boolean;
+  createdAt: string;
+};
+
+type PromoCode = {
+  id: string;
+  code: string;
+  discountType: string;
+  discountValue: number;
   active: boolean;
   createdAt: string;
 };
@@ -263,10 +272,11 @@ function LoginForm({ onLogin }: { onLogin: (token: string, admin: any) => void }
 export default function Dashboard() {
   const [token, setToken] = useState<string | null>(null);
   const [admin, setAdmin] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "orders" | "products" | "categories" | "analytics" | "contacts" | "custom" | "settings">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "orders" | "products" | "categories" | "analytics" | "contacts" | "custom" | "settings" | "promoCodes">("overview");
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -298,11 +308,12 @@ export default function Dashboard() {
     if (showLoading) setLoading(true);
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const [ordersRes, productsRes, statsRes, categoriesRes] = await Promise.all([
+      const [ordersRes, productsRes, statsRes, categoriesRes, promoCodesRes] = await Promise.all([
         fetch("/api/admin/orders", { headers }),
         fetch("/api/admin/products", { headers }),
         fetch("/api/admin/stats", { headers }),
         fetch("/api/admin/categories", { headers }),
+        fetch("/api/admin/promo-codes", { headers }),
       ]);
       
       if (ordersRes.status === 401) {
@@ -314,9 +325,13 @@ export default function Dashboard() {
       const productsData = await productsRes.json();
       const statsData = await statsRes.json();
       const categoriesData = await categoriesRes.json();
+      const promoCodesData = await promoCodesRes.json();
       
       if (categoriesData.success) {
         setAllCategories(categoriesData.categories.sort((a: Category, b: Category) => a.displayOrder - b.displayOrder));
+      }
+      if (promoCodesData.success) {
+        setPromoCodes(promoCodesData.promoCodes);
       }
       if (ordersData.success) {
         const sortedOrders = ordersData.orders.sort((a: Order, b: Order) => 
@@ -539,6 +554,7 @@ export default function Dashboard() {
             { id: 'contacts', label: 'Contacts', icon: Users },
             { id: 'products', label: 'Products', icon: Package },
             { id: 'categories', label: 'Categories', icon: Layers },
+            { id: 'promoCodes', label: 'Promo Codes', icon: Ticket },
             { id: 'analytics', label: 'Analytics', icon: BarChart3 },
             { id: 'settings', label: 'Settings', icon: Settings },
           ].map(tab => (
@@ -924,6 +940,9 @@ export default function Dashboard() {
           <CategoriesSection token={token} />
         )}
 
+        {activeTab === 'promoCodes' && (
+          <PromoCodesSection token={token} promoCodes={promoCodes} setPromoCodes={setPromoCodes} />
+        )}
         {activeTab === 'settings' && (
           <SettingsSection token={token} />
         )}
@@ -2462,6 +2481,291 @@ function CategoryModal({ category, token, onClose, onSuccess }: {
         </div>
       </motion.div>
     </motion.div>
+  );
+}
+
+function PromoCodesSection({ token, promoCodes, setPromoCodes }: { token: string; promoCodes: PromoCode[]; setPromoCodes: (codes: PromoCode[]) => void }) {
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingCode, setEditingCode] = useState<PromoCode | null>(null);
+  const [formData, setFormData] = useState({ code: "", discountType: "percentage", discountValue: "", active: true });
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+
+  const resetForm = () => {
+    setFormData({ code: "", discountType: "percentage", discountValue: "", active: true });
+    setEditingCode(null);
+  };
+
+  const openAddModal = () => {
+    resetForm();
+    setShowAddModal(true);
+  };
+
+  const openEditModal = (code: PromoCode) => {
+    setEditingCode(code);
+    setFormData({
+      code: code.code,
+      discountType: code.discountType,
+      discountValue: code.discountValue.toString(),
+      active: code.active,
+    });
+    setShowAddModal(true);
+  };
+
+  const handleSave = async () => {
+    if (!formData.code.trim() || !formData.discountValue) {
+      toast({ title: "Please fill in all fields", variant: "destructive" });
+      return;
+    }
+    const value = parseInt(formData.discountValue);
+    if (isNaN(value) || value <= 0) {
+      toast({ title: "Discount value must be a positive number", variant: "destructive" });
+      return;
+    }
+    if (formData.discountType === "percentage" && value > 100) {
+      toast({ title: "Percentage cannot exceed 100%", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    try {
+      const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+      const payload = {
+        code: formData.code.toUpperCase().trim(),
+        discountType: formData.discountType,
+        discountValue: value,
+        active: formData.active,
+      };
+      const url = editingCode ? `/api/admin/promo-codes/${editingCode.id}` : "/api/admin/promo-codes";
+      const method = editingCode ? "PUT" : "POST";
+      const res = await fetch(url, { method, headers, body: JSON.stringify(payload) });
+      const data = await res.json();
+      if (data.success) {
+        if (editingCode) {
+          setPromoCodes(promoCodes.map(c => c.id === editingCode.id ? data.promoCode : c));
+        } else {
+          setPromoCodes([data.promoCode, ...promoCodes]);
+        }
+        toast({ title: editingCode ? "Promo code updated!" : "Promo code created!" });
+        setShowAddModal(false);
+        resetForm();
+      } else {
+        toast({ title: data.error || "Failed to save promo code", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Connection error", variant: "destructive" });
+    }
+    setSaving(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this promo code?")) return;
+    try {
+      const res = await fetch(`/api/admin/promo-codes/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setPromoCodes(promoCodes.filter(c => c.id !== id));
+        toast({ title: "Promo code deleted" });
+      }
+    } catch {
+      toast({ title: "Failed to delete", variant: "destructive" });
+    }
+  };
+
+  const toggleActive = async (code: PromoCode) => {
+    try {
+      const res = await fetch(`/api/admin/promo-codes/${code.id}`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ active: !code.active }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPromoCodes(promoCodes.map(c => c.id === code.id ? data.promoCode : c));
+        toast({ title: code.active ? "Promo code deactivated" : "Promo code activated" });
+      }
+    } catch {
+      toast({ title: "Failed to update", variant: "destructive" });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-display text-[#3D2B1F]">Promo Codes</h2>
+        <button
+          onClick={openAddModal}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-white"
+          style={{ backgroundColor: '#3D2B1F' }}
+          data-testid="button-add-promo-code"
+        >
+          <Plus className="w-4 h-4" /> Add Promo Code
+        </button>
+      </div>
+
+      <div className="rounded-lg border border-[#3D2B1F]/10 overflow-hidden" style={{ backgroundColor: '#F9F1F1' }}>
+        {promoCodes.length === 0 ? (
+          <div className="p-8 text-center text-[#3D2B1F]/60">
+            <Ticket className="w-12 h-12 mx-auto mb-3 opacity-30" />
+            <p>No promo codes yet</p>
+            <p className="text-sm mt-1">Create your first promo code to offer discounts</p>
+          </div>
+        ) : (
+          <table className="w-full">
+            <thead className="bg-[#3D2B1F]/5">
+              <tr className="text-left text-[#3D2B1F]/70 text-sm">
+                <th className="px-4 py-3 font-medium">Code</th>
+                <th className="px-4 py-3 font-medium">Discount</th>
+                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Created</th>
+                <th className="px-4 py-3 font-medium text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {promoCodes.map(code => (
+                <tr key={code.id} className="border-t border-[#3D2B1F]/10 hover:bg-[#3D2B1F]/5">
+                  <td className="px-4 py-3 font-mono font-bold text-[#3D2B1F]">{code.code}</td>
+                  <td className="px-4 py-3 text-[#3D2B1F]">
+                    {code.discountType === "percentage" 
+                      ? `${code.discountValue}% off` 
+                      : `$${(code.discountValue / 100).toFixed(2)} off`}
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => toggleActive(code)}
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        code.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                      }`}
+                    >
+                      {code.active ? "Active" : "Inactive"}
+                    </button>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-[#3D2B1F]/60">
+                    {new Date(code.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      onClick={() => openEditModal(code)}
+                      className="p-1.5 text-[#3D2B1F]/60 hover:text-[#3D2B1F] mr-1"
+                      data-testid={`button-edit-promo-${code.id}`}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(code.id)}
+                      className="p-1.5 text-red-400 hover:text-red-600"
+                      data-testid={`button-delete-promo-${code.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <AnimatePresence>
+        {showAddModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={() => { setShowAddModal(false); resetForm(); }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl"
+            >
+              <h3 className="text-lg font-display text-[#3D2B1F] mb-4">
+                {editingCode ? "Edit Promo Code" : "Add Promo Code"}
+              </h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Code</label>
+                  <input
+                    type="text"
+                    value={formData.code}
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                    placeholder="e.g. SAVE20"
+                    className="w-full px-3 py-2 border border-[#3D2B1F]/20 rounded-lg font-mono uppercase"
+                    data-testid="input-promo-code"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#3D2B1F] mb-1">Discount Type</label>
+                  <select
+                    value={formData.discountType}
+                    onChange={(e) => setFormData({ ...formData, discountType: e.target.value })}
+                    className="w-full px-3 py-2 border border-[#3D2B1F]/20 rounded-lg"
+                    data-testid="select-discount-type"
+                  >
+                    <option value="percentage">Percentage (%)</option>
+                    <option value="fixed">Fixed Amount ($)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#3D2B1F] mb-1">
+                    {formData.discountType === "percentage" ? "Percentage Off" : "Amount Off (in cents)"}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={formData.discountValue}
+                      onChange={(e) => setFormData({ ...formData, discountValue: e.target.value })}
+                      placeholder={formData.discountType === "percentage" ? "e.g. 20" : "e.g. 500 ($5.00)"}
+                      className="w-full px-3 py-2 border border-[#3D2B1F]/20 rounded-lg"
+                      data-testid="input-discount-value"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3D2B1F]/40">
+                      {formData.discountType === "percentage" ? "%" : "¢"}
+                    </span>
+                  </div>
+                </div>
+
+                <label className="flex items-center gap-2 text-[#3D2B1F]">
+                  <input
+                    type="checkbox"
+                    checked={formData.active}
+                    onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                    className="rounded"
+                  />
+                  Active (customers can use this code)
+                </label>
+              </div>
+
+              <div className="flex gap-2 mt-6">
+                <button
+                  onClick={() => { setShowAddModal(false); resetForm(); }}
+                  className="flex-1 py-2 rounded-lg bg-[#3D2B1F]/10 text-[#3D2B1F]"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-white disabled:opacity-50"
+                  style={{ backgroundColor: '#3D2B1F' }}
+                  data-testid="button-save-promo-code"
+                >
+                  {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                  {saving ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 

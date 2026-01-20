@@ -1,6 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { storage } from "./storage";
-import { insertProductSchema, insertCategorySchema } from "@shared/schema";
+import { insertProductSchema, insertCategorySchema, insertPromoCodeSchema } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import { sendEmail, sendStatusChangeEmail } from "./email";
 import multer from "multer";
@@ -752,6 +752,67 @@ export function registerAdminRoutes(app: Express) {
     } catch (error: any) {
       console.error("Error seeding categories:", error);
       res.status(500).json({ error: "Failed to seed categories" });
+    }
+  });
+
+  // Promo Codes Management
+  app.get("/api/admin/promo-codes", verifyAdminAuth, async (req, res) => {
+    try {
+      const promoCodes = await storage.getAllPromoCodes();
+      res.json({ success: true, promoCodes });
+    } catch (error: any) {
+      console.error("Error fetching promo codes:", error);
+      res.status(500).json({ error: "Failed to fetch promo codes" });
+    }
+  });
+
+  app.post("/api/admin/promo-codes", verifyAdminAuth, async (req, res) => {
+    try {
+      const parsed = insertPromoCodeSchema.safeParse({
+        ...req.body,
+        code: req.body.code?.toUpperCase().trim(),
+      });
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid promo code data", details: parsed.error.flatten() });
+      }
+      const existing = await storage.getPromoCodeByCode(parsed.data.code);
+      if (existing) {
+        return res.status(400).json({ error: "A promo code with this code already exists" });
+      }
+      const promoCode = await storage.createPromoCode(parsed.data);
+      res.json({ success: true, promoCode });
+    } catch (error: any) {
+      console.error("Error creating promo code:", error);
+      res.status(500).json({ error: "Failed to create promo code" });
+    }
+  });
+
+  app.put("/api/admin/promo-codes/:id", verifyAdminAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = { ...req.body };
+      if (updates.code) {
+        updates.code = updates.code.toUpperCase().trim();
+      }
+      const promoCode = await storage.updatePromoCode(id, updates);
+      if (!promoCode) {
+        return res.status(404).json({ error: "Promo code not found" });
+      }
+      res.json({ success: true, promoCode });
+    } catch (error: any) {
+      console.error("Error updating promo code:", error);
+      res.status(500).json({ error: "Failed to update promo code" });
+    }
+  });
+
+  app.delete("/api/admin/promo-codes/:id", verifyAdminAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deletePromoCode(id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting promo code:", error);
+      res.status(500).json({ error: "Failed to delete promo code" });
     }
   });
 }

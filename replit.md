@@ -31,11 +31,20 @@ A luxury, mobile-first e-commerce website for Diamond Dulceria (Estd. 2025), a p
 - Product management (add, edit, delete, **direct image uploads**, category grouping)
 - **Image uploads** - Upload images directly from computer (stored in /uploads/products)
 - **Categories management** (add, edit, delete, reorder categories)
+- **Promo Codes management** (add, edit, delete, toggle active/inactive)
 - Customer contacts (view all customers, email directly)
 - Custom orders (approve/decline, send quotes)
 - Analytics (revenue graphs, order status, category breakdown)
 - Settings tab for editable site headers
 - 15-second auto-sync with new order popup alerts
+
+## Promo Code System
+- **Admin can create promo codes** with percentage or fixed amount discounts
+- **Promo codes table** stores code, discount type, value, and active status
+- **Customer checkout** includes promo code input field
+- **Server-side validation** ensures promo codes are valid and active
+- **Stripe integration** charges the discounted total, not the original price
+- **Discount metadata** stored in Stripe payment intent for auditing
 
 ## Environment Variables
 - `DATABASE_URL` - PostgreSQL connection string
@@ -74,6 +83,7 @@ The email notification system uses Resend for sending beautiful HTML emails:
 - Category slugs (plural: "truffles", "cookies", etc.) are matched automatically
 
 ## Recent Changes (Jan 2026)
+- **Promo code system** - Admin can create discount codes, customers can apply at checkout
 - Dynamic categories system for navbar and section headers
 - Categories management tab in admin dashboard
 - Dynamic product loading from database to main site

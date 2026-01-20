@@ -58,6 +58,45 @@ export async function registerRoutes(
     }
   });
 
+  // Validate promo code (public endpoint for checkout)
+  app.post("/api/promo-code/validate", async (req, res) => {
+    try {
+      const { code, subtotal } = req.body;
+      if (!code || typeof subtotal !== "number") {
+        return res.status(400).json({ success: false, error: "Code and subtotal required" });
+      }
+      const promoCode = await storage.getPromoCodeByCode(code.toUpperCase().trim());
+      if (!promoCode) {
+        return res.status(404).json({ success: false, error: "Invalid promo code" });
+      }
+      if (!promoCode.active) {
+        return res.status(400).json({ success: false, error: "This promo code is no longer active" });
+      }
+      let discountAmount = 0;
+      if (promoCode.discountType === "percentage") {
+        discountAmount = Math.round((subtotal * promoCode.discountValue) / 100);
+      } else {
+        // Fixed discount stored in cents, convert to dollars
+        discountAmount = promoCode.discountValue / 100;
+      }
+      discountAmount = Math.min(discountAmount, subtotal);
+      const newTotal = subtotal - discountAmount;
+      res.json({
+        success: true,
+        promoCode: {
+          code: promoCode.code,
+          discountType: promoCode.discountType,
+          discountValue: promoCode.discountValue,
+        },
+        discountAmount,
+        newTotal,
+      });
+    } catch (error: any) {
+      console.error("Error validating promo code:", error);
+      res.status(500).json({ success: false, error: "Failed to validate promo code" });
+    }
+  });
+
   // Get Stripe publishable key
   app.get("/api/stripe/publishable-key", async (req, res) => {
     try {
@@ -73,8 +112,8 @@ export async function registerRoutes(
   // This creates a PaymentIntent without creating an order
   app.post("/api/checkout/prepare-payment", async (req, res) => {
     try {
-      const { items } = req.body;
-      console.log("Prepare payment request:", JSON.stringify(items));
+      const { items, promoCode, discountAmount } = req.body;
+      console.log("Prepare payment request:", JSON.stringify({ items, promoCode, discountAmount }));
       
       if (!items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: "Items are required" });
@@ -85,7 +124,7 @@ export async function registerRoutes(
       const productIdMap = new Map(dbProducts.map(p => [String(p.id), p]));
       const productNameMap = new Map(dbProducts.map(p => [p.name.toLowerCase(), p]));
       
-      let total = 0;
+      let subtotal = 0;
       const validatedItems = [];
       
       for (const item of items) {
@@ -107,9 +146,28 @@ export async function registerRoutes(
         }
         
         const price = Number(dbProduct.price);
-        total += price * item.quantity;
+        subtotal += price * item.quantity;
         validatedItems.push({ ...item, id: dbProduct.id, price });
       }
+
+      // Validate promo code server-side if provided
+      let validatedDiscount = 0;
+      let validatedPromoCode = null;
+      if (promoCode && typeof discountAmount === 'number' && discountAmount > 0) {
+        const promo = await storage.getPromoCodeByCode(promoCode);
+        if (promo && promo.active) {
+          if (promo.discountType === "percentage") {
+            validatedDiscount = Math.round((subtotal * promo.discountValue) / 100);
+          } else {
+            // Fixed discount stored in cents, convert to dollars
+            validatedDiscount = promo.discountValue / 100;
+          }
+          validatedDiscount = Math.min(validatedDiscount, subtotal);
+          validatedPromoCode = promo.code;
+        }
+      }
+
+      const total = Math.max(0, subtotal - validatedDiscount);
 
       // If total is $0, skip payment (custom orders only)
       if (total === 0) {
@@ -118,7 +176,9 @@ export async function registerRoutes(
           paymentIntentId: null,
           validatedTotal: 0,
           validatedItems,
-          skipPayment: true
+          skipPayment: true,
+          promoCode: validatedPromoCode,
+          discountAmount: validatedDiscount,
         });
       }
 
@@ -133,6 +193,9 @@ export async function registerRoutes(
         payment_method_types: ['card', 'cashapp', 'link'],
         metadata: {
           validatedTotal: String(total),
+          subtotal: String(subtotal),
+          promoCode: validatedPromoCode || '',
+          discountAmount: String(validatedDiscount),
           itemHash: itemIds,
         },
       });
@@ -142,7 +205,9 @@ export async function registerRoutes(
         paymentIntentId: paymentIntent.id,
         validatedTotal: total,
         validatedItems,
-        skipPayment: false
+        skipPayment: false,
+        promoCode: validatedPromoCode,
+        discountAmount: validatedDiscount,
       });
     } catch (error: any) {
       console.error("Error preparing payment:", error);
