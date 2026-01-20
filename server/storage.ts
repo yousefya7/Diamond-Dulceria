@@ -1,4 +1,4 @@
-import { type Order, type InsertOrder, orders, type Product, type InsertProduct, products, type AdminUser, type InsertAdminUser, adminUsers, type SiteSetting, type InsertSiteSetting, siteSettings, type Category, type InsertCategory, categories } from "@shared/schema";
+import { type Order, type InsertOrder, orders, type Product, type InsertProduct, products, type AdminUser, type InsertAdminUser, adminUsers, type SiteSetting, type InsertSiteSetting, siteSettings, type Category, type InsertCategory, categories, type PromoCode, type InsertPromoCode, promoCodes } from "@shared/schema";
 import { db } from "./db";
 import { sql, eq, desc, asc } from "drizzle-orm";
 
@@ -30,6 +30,12 @@ export interface IStorage {
   getActiveCategories(): Promise<Category[]>;
   updateCategory(id: string, updates: Partial<InsertCategory>): Promise<Category | undefined>;
   deleteCategory(id: string): Promise<boolean>;
+  createPromoCode(promoCode: InsertPromoCode): Promise<PromoCode>;
+  getPromoCode(id: string): Promise<PromoCode | undefined>;
+  getPromoCodeByCode(code: string): Promise<PromoCode | undefined>;
+  getAllPromoCodes(): Promise<PromoCode[]>;
+  updatePromoCode(id: string, updates: Partial<InsertPromoCode>): Promise<PromoCode | undefined>;
+  deletePromoCode(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -244,6 +250,35 @@ export class DatabaseStorage implements IStorage {
 
   async deleteCategory(id: string): Promise<boolean> {
     await db.delete(categories).where(eq(categories.id, id));
+    return true;
+  }
+
+  async createPromoCode(promoCode: InsertPromoCode): Promise<PromoCode> {
+    const [created] = await db.insert(promoCodes).values(promoCode).returning();
+    return created;
+  }
+
+  async getPromoCode(id: string): Promise<PromoCode | undefined> {
+    const [promo] = await db.select().from(promoCodes).where(eq(promoCodes.id, id));
+    return promo;
+  }
+
+  async getPromoCodeByCode(code: string): Promise<PromoCode | undefined> {
+    const [promo] = await db.select().from(promoCodes).where(eq(promoCodes.code, code.toUpperCase()));
+    return promo;
+  }
+
+  async getAllPromoCodes(): Promise<PromoCode[]> {
+    return await db.select().from(promoCodes).orderBy(desc(promoCodes.createdAt));
+  }
+
+  async updatePromoCode(id: string, updates: Partial<InsertPromoCode>): Promise<PromoCode | undefined> {
+    const [updated] = await db.update(promoCodes).set(updates).where(eq(promoCodes.id, id)).returning();
+    return updated;
+  }
+
+  async deletePromoCode(id: string): Promise<boolean> {
+    await db.delete(promoCodes).where(eq(promoCodes.id, id));
     return true;
   }
 }
